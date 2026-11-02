@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=NaviDdan
+Comment=Navigateur Web Moderne et Rapide
+Exec=npm start
+Icon=naviddan
+Terminal=false
+Type=Application
+Categories=Network;WebBrowser;
+StartupWMClass=naviddan
+MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
+

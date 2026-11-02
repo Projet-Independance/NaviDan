@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Historique</title>
+  <link rel="stylesheet" href="popups-common.css">
+</head>
+<body class="no-arrow">
+  <div class="popup-container">
+    <div class="arrow-up"></div>
+
+    <header class="popup-header">
+      <div class="header-left">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <h2 class="title">Historique</h2>
+      </div>
+      <div class="header-actions">
+        <button id="btn-clear-history" class="icon-btn-danger" title="Effacer l'historique">
+          Effacer tout
+        </button>
+      </div>
+    </header>
+
+    <div class="search-bar-row">
+      <input type="text" id="history-search" placeholder="Rechercher dans l'historique..." />
+    </div>
+
+    <div class="popup-body" id="history-list">
+      <!-- Items dynamically populated -->
+    </div>
+  </div>
+
+  <script src="history-popup.js"></script>
+</body>
+</html>
+

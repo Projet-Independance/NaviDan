@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion d'Espace</title>
+  <link rel="stylesheet" href="cleaner-popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <div class="arrow-up"></div>
+
+    <header class="popup-header">
+      <div class="header-left">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+        </svg>
+        <h2 class="title">NAVICLEANER • GESTION D'ESPACE</h2>
+      </div>
+    </header>
+
+    <div class="popup-scroll-body">
+      <!-- Panneau de Télémétrie Haute Densité (Remplace le cadre bento géant) -->
+      <div class="cleaner-hero-panel">
+        <div class="hero-top-row">
+          <span class="hero-label">STOCKAGE NAVIGATEUR</span>
+          <span class="hero-badge">TÉLÉMÉTRIE ACTIVE</span>
+        </div>
+        <div class="hero-size-row">
+          <span class="hero-size-val" id="total-storage-val">0.0</span>
+          <span class="hero-size-unit" id="total-storage-unit">MB</span>
+        </div>
+      </div>
+
+      <!-- Métriques Secondaires 2 Colonnes -->
+      <div class="cleaner-metrics-grid">
+        <div class="metric-card">
+          <span class="metric-label">TÉLÉCHARGEMENTS</span>
+          <span class="metric-val" id="dl-storage-val">0 MB</span>
+        </div>
+        <div class="metric-card">
+          <span class="metric-label">COOKIES &amp; DONNÉES</span>
+          <span class="metric-val" id="cookies-count-val">0</span>
+        </div>
+      </div>
+
+      <!-- Sélecteur Segmenté Physique (MIN / MED / MAX) -->
+      <div class="presets-row">
+        <button class="preset-btn" id="preset-min" title="Nettoyage léger (Cache seul)">MIN</button>
+        <button class="preset-btn active" id="preset-med" title="Nettoyage recommandé (Cache + Cookies)">MED</button>
+        <button class="preset-btn" id="preset-max" title="Nettoyage complet (Totalité)">MAX</button>
+      </div>
+
+      <!-- Bouton d'Action Net & Franc -->
+      <button class="btn-clean-primary" id="btn-start-cleaning">
+        EXÉCUTER LE NETTOYAGE
+      </button>
+
+      <!-- Configuration Avancée Linéaire Compacte -->
+      <div class="advanced-section">
+        <div class="advanced-header-title">OPTIONS DE PURGE AVANCÉES</div>
+
+        <div class="clean-option-row">
+          <div class="clean-option-left">
+            <label class="toggle-switch">
+              <input type="checkbox" id="chk-cache" checked />
+              <span class="slider"></span>
+            </label>
+            <span class="clean-option-text">Cache navigateur</span>
+          </div>
+          <span class="clean-option-size" id="cache-size-hint">Calcul...</span>
+        </div>
+
+        <div class="clean-option-row">
+          <div class="clean-option-left">
+            <label class="toggle-switch">
+              <input type="checkbox" id="chk-cookies" checked />
+              <span class="slider"></span>
+            </label>
+            <span class="clean-option-text">Cookies &amp; stockage local</span>
+          </div>
+          <span class="clean-option-size" id="cookies-size-hint">0</span>
+        </div>
+
+        <div class="clean-option-row">
+          <div class="clean-option-left">
+            <label class="toggle-switch">
+              <input type="checkbox" id="chk-history" />
+              <span class="slider"></span>
+            </label>
+            <span class="clean-option-text">Historique de navigation</span>
+          </div>
+          <span class="clean-option-size" id="history-size-hint">0 URLs</span>
+        </div>
+
+        <div class="clean-option-row">
+          <div class="clean-option-left">
+            <label class="toggle-switch">
+              <input type="checkbox" id="chk-downloads" />
+              <span class="slider"></span>
+            </label>
+            <span class="clean-option-text">Historique téléchargements</span>
+          </div>
+          <span class="clean-option-size" id="dl-size-hint">0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="cleaner-popup.js"></script>
+</body>
+</html>

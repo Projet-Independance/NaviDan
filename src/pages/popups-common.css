@@ -1,0 +1,352 @@
+/* ==========================================================================
+   NAVIDDAN • DESIGN INDUSTRIEL / ANTI-AI DESIGN SYSTÈME
+   Bordures physiques nettes 1px solid, typographie technique monospace,
+   haute densité, compacité maximale, zéro artifice néon ou flou mou.
+   ========================================================================== */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+body {
+  background: transparent;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #f0f6fc;
+}
+
+/* Surface physique du popup */
+.popup-container {
+  width: 340px;
+  max-height: 440px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #f0f6fc;
+}
+
+/* Flèche de pointage technique */
+.arrow-up {
+  position: absolute;
+  top: -5px;
+  right: 20px;
+  width: 10px;
+  height: 10px;
+  background: #161b22;
+  border-left: 1px solid #30363d;
+  border-top: 1px solid #30363d;
+  transform: rotate(45deg);
+  z-index: 10;
+}
+
+body.no-arrow .arrow-up {
+  display: none;
+}
+
+/* En-tête technique */
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #3b82f6;
+}
+
+.header-left svg {
+  flex-shrink: 0;
+}
+
+.title {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #f0f6fc;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.icon-btn-danger {
+  background: #21262d;
+  border: 1px solid #da3633;
+  color: #f85149;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.icon-btn-danger:hover {
+  background: #da3633;
+  color: #ffffff;
+}
+
+/* Barre de recherche compacte */
+.search-bar-row {
+  padding: 8px 12px 4px 12px;
+  background: #0d1117;
+}
+
+.search-bar-row input {
+  width: 100%;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  padding: 6px 10px;
+  color: #f0f6fc;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  outline: none;
+  user-select: auto;
+  transition: border-color 0.1s ease;
+}
+
+.search-bar-row input:focus {
+  border-color: #3b82f6;
+}
+
+/* Corps déroulant haute densité */
+.popup-body {
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  max-height: 340px;
+  background: #0d1117;
+}
+
+.popup-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.popup-body::-webkit-scrollbar-track {
+  background: #0d1117;
+}
+
+.popup-body::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 2px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 10px;
+  color: #8b949e;
+  gap: 6px;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+
+.empty-icon {
+  font-size: 1.4rem;
+  opacity: 0.6;
+}
+
+/* Éléments de liste compacts */
+.list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: #161b22;
+  border: 1px solid #21262d;
+  transition: background 0.1s ease, border-color 0.1s ease;
+  gap: 8px;
+}
+
+.list-item:hover {
+  background: #1c2128;
+  border-color: #30363d;
+}
+
+.item-left {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+}
+
+.item-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f0f6fc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-url {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #8b949e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-time {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #6e7681;
+  flex-shrink: 0;
+}
+
+.delete-btn-sm {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #8b949e;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+  transition: all 0.1s;
+}
+
+.list-item:hover .delete-btn-sm {
+  opacity: 1;
+}
+
+.delete-btn-sm:hover {
+  color: #f85149;
+  background: rgba(218, 54, 51, 0.15);
+  border-color: #da3633;
+}
+
+/* Lignes de paramètres industrielles */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  transition: border-color 0.1s ease;
+}
+
+.setting-row:hover {
+  border-color: #30363d;
+}
+
+.setting-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.setting-main-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f0f6fc;
+}
+
+.setting-sub-label {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #8b949e;
+  letter-spacing: 0.02em;
+}
+
+.setting-select-control {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  color: #f0f6fc;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  outline: none;
+  cursor: pointer;
+}
+
+.setting-select-control:focus {
+  border-color: #3b82f6;
+}
+
+/* Interrupteur physique franc (Anti-AI Toggle) */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 3px;
+  transition: background-color 0.1s ease, border-color 0.1s ease;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 12px;
+  width: 12px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #8b949e;
+  border-radius: 2px;
+  transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+input:checked + .slider {
+  background-color: #1f6feb;
+  border-color: #388bfd;
+}
+
+input:checked + .slider:before {
+  transform: translateX(16px);
+  background-color: #ffffff;
+}

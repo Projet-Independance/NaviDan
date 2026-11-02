@@ -1,0 +1,48 @@
+{
+  "name": "naviddan",
+  "version": "1.0.0",
+  "description": "Navigateur Web moderne, rapide et sécurisé développé sur mesure",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "node start.js",
+    "build:linux": "npx electron-builder --linux AppImage deb",
+    "build:win": "npx electron-builder --win portable nsis"
+  },
+  "build": {
+    "appId": "com.naviddan.browser",
+    "productName": "NaviDdan",
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Network",
+      "icon": "assets/icon.svg"
+    },
+    "win": {
+      "target": [
+        "portable",
+        "nsis"
+      ],
+      "icon": "assets/icon.svg"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "start.js",
+      "package.json"
+    ]
+  },
+  "keywords": [
+    "browser",
+    "electron",
+    "adblock",
+    "chromium",
+    "linux"
+  ],
+  "author": "NaviDdan",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^24.22.1"
+  }
+}

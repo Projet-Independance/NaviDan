@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nouvel Onglet - NaviDdan</title>
+  <link rel="stylesheet" href="newtab.css">
+</head>
+<body class="dark-theme">
+  <div class="background-overlay"></div>
+  
+  <div class="container">
+    <!-- Header with Live Clock & Greeting -->
+    <header class="header">
+      <div class="clock" id="clock">12:00</div>
+      <div class="date" id="date">Lundi 2 Novembre</div>
+      <div class="greeting" id="greeting">Bienvenue sur NaviDdan</div>
+    </header>
+
+    <!-- Centered Search Omnibox -->
+    <div class="search-box-wrapper">
+      <form id="search-form" class="search-form">
+        <span class="search-icon">🔍</span>
+        <input 
+          type="text" 
+          id="search-input" 
+          placeholder="Rechercher sur Google ou saisir une URL..." 
+          autocomplete="off" 
+          autofocus
+        />
+        <button type="submit" class="search-btn">➔</button>
+      </form>
+    </div>
+
+    <!-- Quick Dial / Top Sites Grid -->
+    <section class="speed-dial-section">
+      <div class="section-title">
+        <span>Raccourcis Favoris</span>
+        <button id="add-shortcut-btn" class="icon-btn-text" title="Ajouter un raccourci">+ Ajouter</button>
+      </div>
+
+      <div class="shortcuts-grid" id="shortcuts-grid">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- Bottom Quick Stats / Adblock info -->
+    <footer class="footer">
+      <div class="stat-badge">
+        <span class="stat-icon">🛡️</span>
+        <span id="adblock-badge">Bouclier NaviDdan actif</span>
+      </div>
+      <div class="engine-badge">
+        <span>Moteur : Chromium &amp; Electron</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Modal for Adding Shortcut -->
+  <div id="add-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Ajouter un raccourci</h3>
+      <input type="text" id="modal-name" placeholder="Nom du site (ex: YouTube)" />
+      <input type="url" id="modal-url" placeholder="Adresse URL (https://...)" />
+      <div class="modal-actions">
+        <button id="modal-cancel" class="btn secondary">Annuler</button>
+        <button id="modal-save" class="btn primary">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="newtab.js"></script>
+</body>
+</html>
+

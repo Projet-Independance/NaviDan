@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Focus • Cockpit</title>
+  <link rel="stylesheet" href="audio-popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <div class="arrow-up"></div>
+
+    <!-- Header Cockpit Anti-AI -->
+    <header class="popup-header">
+      <div class="header-left">
+        <svg class="header-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+        <h2 class="title">AUDIO FOCUS • COCKPIT</h2>
+      </div>
+      <span id="audio-count" class="streams-badge">0 FLUX</span>
+    </header>
+
+    <!-- Master Action Bar -->
+    <div class="master-action-row">
+      <button id="btn-mute-bg" class="btn-mute-all" title="Coupe instantanément tous les onglets sauf l'onglet actif (Ctrl+Shift+M)">
+        <span class="btn-icon">🔇</span>
+        <span class="btn-text">MUTER ARRIÈRE-PLAN</span>
+        <span class="btn-shortcut">Ctrl+Shift+M</span>
+      </button>
+    </div>
+
+    <!-- Active Audio Streams List -->
+    <div class="streams-container">
+      <div class="section-label">
+        <span>FLUX DÉTECTÉS PAR ONGLET</span>
+      </div>
+
+      <div id="streams-list" class="streams-list">
+        <!-- Dynamically injected stream items -->
+      </div>
+
+      <div id="streams-empty" class="streams-empty">
+        <div class="empty-icon">🎧</div>
+        <div class="empty-title">AUCUN FLUX ACTIF</div>
+        <div class="empty-sub">Lancez une vidéo ou un stream pour contrôler le son ici</div>
+      </div>
+    </div>
+
+    <!-- Cockpit Footer -->
+    <footer class="popup-footer">
+      <div class="footer-hint">
+        <code>Ctrl+M</code> Mute actif &nbsp;•&nbsp; <code>Ctrl+Shift+M</code> Mute arrière-plan
+      </div>
+    </footer>
+  </div>
+
+  <script src="audio-popup.js"></script>
+</body>
+</html>
+

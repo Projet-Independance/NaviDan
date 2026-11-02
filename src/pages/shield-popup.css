@@ -1,0 +1,228 @@
+/* ==========================================================================
+   NAVISHIELD • PROTECTION & CONFIDENTIALITÉ • ANTI-AI DESIGN
+   Surfaces matérielles opaques, bordures nettes 1px solid, typographie technique.
+   ========================================================================== */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+body {
+  background: transparent;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #f0f6fc;
+}
+
+.popup-container {
+  width: 320px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.arrow-up {
+  position: absolute;
+  top: -5px;
+  right: 24px;
+  width: 10px;
+  height: 10px;
+  background: #161b22;
+  border-left: 1px solid #30363d;
+  border-top: 1px solid #30363d;
+  transform: rotate(45deg);
+  z-index: 10;
+}
+
+/* Header */
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+}
+
+.title {
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #f0f6fc;
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: #8b949e;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  border-radius: 3px;
+  transition: all 0.1s ease;
+}
+
+.icon-btn:hover {
+  color: #f0f6fc;
+  background: #21262d;
+}
+
+/* Body */
+.popup-body {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.protection-card {
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 4px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.1s ease;
+}
+
+.protection-card:hover {
+  border-color: #30363d;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.shield-icon {
+  background: rgba(31, 111, 235, 0.15);
+  color: #388bfd;
+  border: 1px solid rgba(56, 139, 253, 0.3);
+}
+
+.shield-icon.disabled {
+  background: #21262d;
+  color: #8b949e;
+  border-color: #30363d;
+}
+
+.tracker-icon {
+  background: rgba(63, 185, 80, 0.15);
+  color: #3fb950;
+  border: 1px solid rgba(63, 185, 80, 0.3);
+}
+
+.tracker-icon.disabled {
+  background: #21262d;
+  color: #8b949e;
+  border-color: #30363d;
+}
+
+.card-text {
+  flex: 1;
+}
+
+.status-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #f0f6fc;
+  line-height: 1.3;
+}
+
+.action-toggle-btn {
+  background: #21262d;
+  border: 1px solid #30363d;
+  color: #f0f6fc;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  text-align: center;
+}
+
+.action-toggle-btn:hover {
+  background: #30363d;
+}
+
+.action-toggle-btn.active {
+  background: #1f6feb;
+  border-color: #388bfd;
+  color: #ffffff;
+}
+
+/* Stats */
+.stats-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: #3fb950;
+  letter-spacing: 0.04em;
+}
+
+.privacy-link-container {
+  display: flex;
+  justify-content: center;
+}
+
+.privacy-link {
+  font-family: ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 600;
+  color: #8b949e;
+  text-decoration: underline;
+  transition: color 0.1s ease;
+}
+
+.privacy-link:hover {
+  color: #388bfd;
+}
+
+/* Footer Notice */
+.notice-footer {
+  padding: 8px 12px;
+  background: #161b22;
+  border-top: 1px solid #21262d;
+}
+
+.notice-footer p {
+  font-size: 9px;
+  color: #8b949e;
+  line-height: 1.3;
+  text-align: center;
+}

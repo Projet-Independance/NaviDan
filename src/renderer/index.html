@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NaviDdan</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="theme-dark">
+  <!-- Top App Shell (Chrome) -->
+  <div id="browser-chrome" class="browser-chrome">
+
+    <!-- Titlebar & Tabs Strip -->
+    <div class="titlebar" id="titlebar">
+      <!-- Drag Region for moving window -->
+      <div class="drag-region">
+        <div class="app-brand">
+          <span class="brand-icon">🌐</span>
+          <span class="brand-name">NaviDdan</span>
+        </div>
+      </div>
+
+      <!-- Horizontal Tabs Strip -->
+      <div class="tabs-container">
+        <div class="tabs-list" id="tabs-list">
+          <!-- Dynamically inserted tabs -->
+        </div>
+        <button id="btn-new-tab" class="btn-tab-action no-drag" title="Nouvel onglet (Ctrl+T)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+        <button id="btn-new-incognito" class="btn-tab-action incognito-btn no-drag"
+          title="Nouvel onglet privé (Ctrl+Shift+N)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Extra draggable space to easily grab and move the window -->
+      <div class="titlebar-drag-filler"></div>
+
+      <!-- Window Controls (Windows standard) -->
+      <div class="window-controls no-drag">
+        <button id="win-min" class="win-btn" title="Réduire">
+          <svg width="10" height="1" viewBox="0 0 10 1">
+            <rect width="10" height="1" fill="currentColor" />
+          </svg>
+        </button>
+        <button id="win-max" class="win-btn" title="Agrandir / Restaurer">
+          <svg width="10" height="10" viewBox="0 0 10 10">
+            <rect x="1" y="1" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1" />
+          </svg>
+        </button>
+        <button id="win-close" class="win-btn win-close" title="Fermer">
+          <svg width="10" height="10" viewBox="0 0 10 10">
+            <path d="M1 1l8 8M9 1L1 9" stroke="currentColor" stroke-width="1.2" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Navigation Toolbar (Ultra-clean & uncluttered) -->
+    <div class="nav-toolbar">
+      <div class="nav-buttons">
+        <button id="btn-toggle-sidebar" class="nav-btn" title="Afficher/Masquer la barre latérale (Ctrl+\)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <line x1="9" y1="3" x2="9" y2="21"/>
+          </svg>
+        </button>
+        <button id="btn-back" class="nav-btn" title="Page précédente (Alt+Flèche gauche)" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </button>
+        <button id="btn-forward" class="nav-btn" title="Page suivante (Alt+Flèche droite)" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
+        <button id="btn-reload" class="nav-btn" title="Actualiser (F5 / Ctrl+R)">
+          <svg class="icon-reload" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+            <path d="M16 21h5v-5" />
+          </svg>
+          <svg class="icon-stop hidden" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
+        <button id="btn-home" class="nav-btn" title="Page d'accueil">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Unified Address Bar (Omnibox - spacious) -->
+      <div class="omnibox-container">
+        <div class="omnibox-wrapper" id="omnibox-wrapper">
+          <span id="security-badge" class="security-badge" title="Sécurité de la connexion">
+            <svg class="icon-lock" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </span>
+          <input type="text" id="omnibox-input" placeholder="Rechercher avec Google ou saisir une adresse web"
+            spellcheck="false" autocomplete="off" />
+          <button id="btn-omnibox-pip" class="omnibox-action-btn pip-omnibox-btn hidden" title="Ouvrir la vidéo en Picture-in-Picture (PiP)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+              <rect x="12" y="9" width="8" height="6" rx="1" ry="1" fill="currentColor"/>
+            </svg>
+          </button>
+          <button id="btn-star-bookmark" class="omnibox-action-btn" title="Ajouter aux favoris (Ctrl+D)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon
+                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Tools -->
+      <div class="toolbar-actions">
+        <!-- Gaming Turbo Mode Toggle Button -->
+        <button id="btn-turbo-mode" class="turbo-btn" title="Mode Gaming Turbo (Ctrl+Shift+G) : Gel des onglets + 100% CPU/GPU dédié">
+          <span class="turbo-led"></span>
+          <span class="turbo-text">⚡ TURBO</span>
+        </button>
+
+        <!-- Audio Focus Controller Group -->
+        <div class="audio-action-group">
+          <button id="btn-audio-mute" class="action-btn audio-btn" title="Muter / Rétablir l'onglet actif (Ctrl+M)">
+            <svg class="audio-icon-unmuted" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            </svg>
+            <svg class="audio-icon-muted hidden" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+              <line x1="23" y1="9" x2="17" y2="15"/>
+              <line x1="17" y1="9" x2="23" y2="15"/>
+            </svg>
+            <span id="audio-streams-count" class="badge hidden">0</span>
+          </button>
+          <button id="btn-audio-menu" class="audio-menu-arrow" title="Mini-Cockpit Audio Focus (Ctrl+Shift+M)">▾</button>
+        </div>
+
+        <!-- Adblock Shield Toggle & Counter -->
+        <button id="btn-adblock" class="action-btn badge-container active" title="Bouclier anti-pub NaviDdan">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+          <span id="adblock-counter" class="badge">0</span>
+        </button>
+
+        <!-- NaviSnipper Screen Capture Button -->
+        <button id="btn-snipper" class="action-btn" title="Capture d'écran NaviSnipper (Ctrl+Shift+S)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        </button>
+
+        <!-- Downloads Button -->
+        <button id="btn-downloads" class="action-btn" title="Téléchargements (Ctrl+J)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+        </button>
+
+        <!-- Main Menu / Settings Button -->
+        <button id="btn-settings" class="action-btn" title="Paramètres">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Bookmarks Quick Bar -->
+    <div id="bookmarks-bar" class="bookmarks-bar">
+      <!-- Injected bookmarks links -->
+    </div>
+
+    <!-- Find In Page Bar (Ctrl+F) -->
+    <div id="find-bar" class="find-bar hidden">
+      <input type="text" id="find-input" placeholder="Rechercher dans la page..." />
+      <span id="find-count" class="find-count">0/0</span>
+      <button id="find-prev" class="find-btn" title="Précédent">▲</button>
+      <button id="find-next" class="find-btn" title="Suivant">▼</button>
+      <button id="find-close" class="find-btn" title="Fermer">✕</button>
+    </div>
+
+    <!-- Technical Anti-AI Turbo Toast Notification -->
+    <div id="turbo-toast" class="turbo-toast hidden"></div>
+
+    <!-- NaviSnipper Floating Result Bar (Anti-AI Design) -->
+    <div id="snipper-result-bar" class="snipper-result-bar hidden">
+      <img id="snipper-thumb" class="snipper-thumb" alt="Aperçu capture" />
+      <div class="snipper-meta">
+        <span class="snipper-badge">✓ COPIÉ DANS LE PRESSE-PAPIER</span>
+        <span id="snipper-dimensions" class="snipper-dim-text">0 × 0 PX</span>
+      </div>
+      <div class="snipper-actions">
+        <button id="btn-snipper-save" class="snipper-action-btn primary" title="Enregistrer le fichier PNG">
+          💾 ENREGISTRER
+        </button>
+        <button id="btn-snipper-copy" class="snipper-action-btn" title="Copier à nouveau">
+          📋 COPIER
+        </button>
+        <button id="btn-snipper-close" class="snipper-close-btn" title="Fermer">✕</button>
+      </div>
+    </div>
+
+
+
+  </div> <!-- End browser-chrome -->
+
+  <!-- Main Body Layout: Sidebar + Webview space -->
+  <div class="main-layout">
+    <!-- Left Sleek Collapsible Sidebar (44px) -->
+    <aside id="browser-sidebar" class="browser-sidebar">
+      <div class="sidebar-top-actions">
+        <!-- Performance / NaviControl -->
+        <button id="sidebar-btn-perf" class="sidebar-btn" title="NaviControl • Limiteurs & Performances (RAM/CPU)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+        </button>
+
+        <!-- Cleaner / NaviCleaner -->
+        <button id="sidebar-btn-cleaner" class="sidebar-btn" title="NaviCleaner • Nettoyeur d'espace et cache">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+          </svg>
+        </button>
+
+        <!-- Password Vault -->
+        <button id="sidebar-btn-passwords" class="sidebar-btn" title="Coffre-fort mots de passe">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </button>
+
+        <!-- Themes Manager -->
+        <button id="sidebar-btn-themes" class="sidebar-btn" title="Thèmes & Néon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
+            <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+            <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
+            <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+            <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+          </svg>
+        </button>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- History -->
+        <button id="sidebar-btn-history" class="sidebar-btn" title="Historique (Ctrl+H)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+        </button>
+
+        <!-- Bookmarks -->
+        <button id="sidebar-btn-bookmarks" class="sidebar-btn" title="Favoris">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="sidebar-bottom-actions">
+        <!-- Collapse/Expand Sidebar Toggle -->
+        <button id="sidebar-btn-collapse" class="sidebar-btn" title="Réduire la barre latérale (Ctrl+\)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Web View Container placeholder (BrowserView displays to the right of sidebar) -->
+    <div id="webview-spacer" class="webview-spacer"></div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+
+</html>

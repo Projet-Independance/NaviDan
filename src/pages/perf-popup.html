@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Performances &amp; Télémétrie</title>
+  <link rel="stylesheet" href="perf-popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <div class="arrow-up"></div>
+
+    <!-- Header Technique -->
+    <header class="popup-header">
+      <div class="header-left">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+        <h2 class="title">TÉLÉMÉTRIE • PERFORMANCES</h2>
+      </div>
+      <button id="btn-optimize-ram" class="btn-boost" title="Purger et optimiser la mémoire active">PURGER RAM</button>
+    </header>
+
+    <div class="popup-scroll-body">
+      <!-- Section 1: Limiteur de RAM Compact -->
+      <section class="card-section">
+        <div class="section-top">
+          <div class="section-title-wrap">
+            <span class="icon-small">💾</span>
+            <span class="section-name">LIMITEUR DE RAM</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-ram-limit" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="instrument-split-row">
+          <!-- Jauge Compacte Haute Précision -->
+          <div class="gauge-container">
+            <div class="gauge-ring">
+              <svg class="gauge-svg" viewBox="0 0 160 160">
+                <circle class="gauge-bg" cx="80" cy="80" r="66"/>
+                <circle class="gauge-progress" id="gauge-circle" cx="80" cy="80" r="66"/>
+              </svg>
+              <div class="gauge-content">
+                <span class="gauge-value" id="ram-used-val">0.4</span>
+                <span class="gauge-unit">GB</span>
+              </div>
+            </div>
+            <span class="gauge-sub" id="ram-total-info">/ 16 GB TOTAL</span>
+          </div>
+
+          <!-- Contrôles Slider & Quota Matériel -->
+          <div class="slider-controls-col">
+            <div class="slider-wrapper">
+              <div class="slider-header">
+                <span class="slider-caption">LIMITE ALLOUÉE :</span>
+                <strong id="slider-val-label" class="slider-metric">4.0 GB</strong>
+              </div>
+              <input type="range" id="ram-slider" min="1" max="32" step="0.5" value="4" />
+              <div class="slider-endpoints">
+                <span>1G</span>
+                <span>32G</span>
+              </div>
+            </div>
+
+            <div class="sub-toggle-row">
+              <div class="sub-toggle-text">
+                <strong>LIMITE STRICTE</strong>
+                <span>Blocage hard ceiling</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggle-hard-limit" />
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 2: Limiteur de CPU Compact -->
+      <section class="card-section">
+        <div class="section-top">
+          <div class="section-title-wrap">
+            <span class="icon-small">⚡</span>
+            <span class="section-name">LIMITEUR DE CPU</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-cpu-limit" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="instrument-split-row">
+          <!-- Jauge CPU Compacte -->
+          <div class="gauge-container">
+            <div class="gauge-ring">
+              <svg class="gauge-svg" viewBox="0 0 160 160">
+                <circle class="gauge-bg" cx="80" cy="80" r="66"/>
+                <circle class="gauge-progress cpu-gauge" id="cpu-gauge-circle" cx="80" cy="80" r="66"/>
+              </svg>
+              <div class="gauge-content">
+                <span class="gauge-value" id="cpu-used-val">0</span>
+                <span class="gauge-unit">%</span>
+              </div>
+            </div>
+            <span class="gauge-sub" id="cpu-core-info">8 CŒURS</span>
+          </div>
+
+          <!-- Contrôles Slider CPU & Bride Matérielle -->
+          <div class="slider-controls-col">
+            <div class="slider-wrapper">
+              <div class="slider-header">
+                <span class="slider-caption">PLAFOND CPU :</span>
+                <strong id="cpu-slider-val-label" class="slider-metric">50%</strong>
+              </div>
+              <input type="range" id="cpu-slider" min="10" max="100" step="5" value="50" />
+              <div class="slider-endpoints">
+                <span>10%</span>
+                <span>100%</span>
+              </div>
+            </div>
+
+            <div class="sub-toggle-row">
+              <div class="sub-toggle-text">
+                <strong>THROTTLING FOND</strong>
+                <span>Brider les onglets passifs</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggle-cpu-hard-limit" />
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: Limiteur Réseau Linéaire -->
+      <section class="card-section">
+        <div class="section-top">
+          <div class="section-title-wrap">
+            <span class="icon-small">📶</span>
+            <span class="section-name">LIMITEUR DE RÉSEAU</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="toggle-net-limit" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="net-stats-row">
+          <div class="net-stat-item">
+            <span class="net-arrow">↓</span>
+            <div class="net-detail">
+              <span class="net-label">RÉCEPTION</span>
+              <span class="net-speed" id="net-down-val">Illimité</span>
+            </div>
+          </div>
+          <div class="net-stat-item">
+            <span class="net-arrow">↑</span>
+            <div class="net-detail">
+              <span class="net-label">ÉMISSION</span>
+              <span class="net-speed" id="net-up-val">Illimité</span>
+            </div>
+          </div>
+        </div>
+
+        <select id="select-net-preset" class="select-cyber">
+          <option value="unlimited">Illimité (Pleine bande)</option>
+          <option value="100mbps">100 Mbps (12.5 MB/s)</option>
+          <option value="50mbps">50 Mbps (6.25 MB/s)</option>
+          <option value="25mbps">25 Mbps (3.1 MB/s)</option>
+          <option value="10mbps">10 Mbps (Gaming strict)</option>
+        </select>
+      </section>
+
+      <!-- Section 4: Hot Tabs Killer -->
+      <section class="card-section">
+        <div class="section-top">
+          <div class="section-title-wrap">
+            <span class="icon-small">☠️</span>
+            <span class="section-name">GESTIONNAIRE D'ONGLETS ACTIFS</span>
+          </div>
+          <span class="badge-tab-count" id="tab-count-badge">0 onglet</span>
+        </div>
+
+        <div class="hot-tabs-list" id="hot-tabs-list">
+          <!-- Rempli dynamiquement -->
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="perf-popup.js"></script>
+</body>
+</html>

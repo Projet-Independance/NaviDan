@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PiP NaviDdan</title>
+  <link rel="stylesheet" href="pip-window.css">
+</head>
+<body>
+  <div class="pip-container" id="pip-container">
+    <!-- Top Header Bar (appears on hover or drag) -->
+    <header class="pip-header">
+      <div class="pip-drag-region">
+        <span class="pip-badge">⚡ PiP Gaming</span>
+        <span class="pip-title" id="pip-title">Vidéo en cours</span>
+      </div>
+
+      <div class="pip-header-actions no-drag">
+        <!-- Opacity Slider -->
+        <div class="opacity-control" title="Régler la transparence pour jouer">
+          <span class="opacity-icon">👁️</span>
+          <input type="range" id="pip-opacity-slider" min="30" max="100" value="100" />
+          <span id="pip-opacity-label" class="opacity-label">100%</span>
+        </div>
+
+        <!-- Back to Tab Button -->
+        <button id="btn-back-to-tab" class="pip-hdr-btn" title="Revenir à l'onglet source">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+        </button>
+
+        <!-- Close Button -->
+        <button id="btn-close-pip" class="pip-hdr-btn btn-close" title="Fermer le PiP">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Video Element -->
+    <div class="video-wrapper">
+      <video id="pip-video" autoplay playsinline muted></video>
+      <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+        <span>Connexion au flux vidéo...</span>
+      </div>
+    </div>
+
+    <!-- Bottom Controls Overlay (visible on hover) -->
+    <footer class="pip-controls no-drag">
+      <div class="controls-left">
+        <!-- Play / Pause -->
+        <button id="btn-play-pause" class="pip-ctrl-btn main-play" title="Lecture / Pause (Espace)">
+          <svg class="icon-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          <svg class="icon-pause hidden" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="6" y="4" width="4" height="16"/>
+            <rect x="14" y="4" width="4" height="16"/>
+          </svg>
+        </button>
+
+        <!-- Rewind 10s -->
+        <button id="btn-rewind" class="pip-ctrl-btn" title="Reculer de 10s">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/>
+          </svg>
+          <span class="ctrl-sub">10</span>
+        </button>
+
+        <!-- Forward 10s -->
+        <button id="btn-forward" class="pip-ctrl-btn" title="Avancer de 10s">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M13 17l5-5-5-5M6 17l5-5-5-5"/>
+          </svg>
+          <span class="ctrl-sub">10</span>
+        </button>
+
+        <span class="pip-time-display" id="pip-time">00:00 / 00:00</span>
+      </div>
+
+      <div class="controls-right">
+        <!-- Mute Button -->
+        <button id="btn-mute" class="pip-ctrl-btn" title="Couper / Activer le son">
+          <svg class="icon-vol-high" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          </svg>
+          <svg class="icon-vol-mute hidden" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="1" y1="1" x2="23" y2="23"/>
+            <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/>
+            <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/>
+          </svg>
+        </button>
+
+        <!-- Volume Slider -->
+        <input type="range" id="pip-volume-slider" class="pip-vol-range" min="0" max="100" value="100" />
+      </div>
+    </footer>
+  </div>
+
+  <script src="pip-window.js"></script>
+</body>
+</html>
+

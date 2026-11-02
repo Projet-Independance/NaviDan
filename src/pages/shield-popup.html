@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Protection de confidentialité</title>
+  <link rel="stylesheet" href="shield-popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Top Caret / Arrow pointer -->
+    <div class="arrow-up"></div>
+
+    <!-- Header -->
+    <header class="popup-header">
+      <h2 class="title">Protection de confidentialité</h2>
+      <button id="btn-open-settings" class="icon-btn" title="Paramètres de confidentialité">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Main Content List -->
+    <div class="popup-body">
+      <!-- Section 1: Bloqueur de pubs -->
+      <div class="protection-card">
+        <div class="card-header">
+          <div class="card-icon shield-icon" id="shield-icon-badge">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <line id="shield-status-line" x1="9" y1="12" x2="15" y2="12" stroke-width="2.5"/>
+            </svg>
+          </div>
+          <div class="card-text">
+            <span id="ads-status-text" class="status-title">Bloqueur de publicités actif sur ce site</span>
+          </div>
+        </div>
+        <button id="btn-toggle-ads" class="action-toggle-btn">Désactiver sur ce site</button>
+      </div>
+
+      <!-- Section 2: Blocage des traqueurs -->
+      <div class="protection-card">
+        <div class="card-header">
+          <div class="card-icon tracker-icon" id="tracker-icon-badge">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm9 7h-6v13h-2v-6h-2v6H9V9H3V7h18v2z"/>
+            </svg>
+          </div>
+          <div class="card-text">
+            <span id="trackers-status-text" class="status-title">Blocage des traqueurs actif sur ce site</span>
+          </div>
+        </div>
+        <button id="btn-toggle-trackers" class="action-toggle-btn">Désactiver sur ce site</button>
+      </div>
+
+      <!-- Privacy link & stats -->
+      <div class="stats-row" id="stats-row">
+        <span id="blocked-count-text">0 élément bloqué sur cette page</span>
+      </div>
+
+      <div class="privacy-link-container">
+        <a href="#" id="link-privacy" class="privacy-link">Comment protéger ma vie privée</a>
+      </div>
+    </div>
+
+    <!-- Bottom Notice Banner -->
+    <footer class="notice-footer">
+      <p>Le blocage de contenu peut empêcher certains sites Web de fonctionner correctement.</p>
+    </footer>
+  </div>
+
+  <script src="shield-popup.js"></script>
+</body>
+</html>
+
