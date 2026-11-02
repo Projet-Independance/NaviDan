@@ -44,6 +44,14 @@ Un navigateur web de bureau moderne, ultra-rapide et personnalisable, propulsé 
    * Configuration avancée avec bascules granulaires : *Cache*, *Cookies & LocalStorage*, *Historique*, *Téléchargements*.
    * Bouton **« Commencer à nettoyer »** pour récupérer instantanément de l'espace disque.
 
+6. 🪐 **Workspaces & Gestion d'Onglets Pro** :
+   * **Espaces de travail indépendants** : Pilules cyber en haut de la barre latérale (🎮 Gaming, 💼 Travail, 🌐 Perso, ⚡ Dev) avec coloration néon dynamique selon l'espace actif.
+   * **Création et gestion d'espaces personnalisés (`+`)** : Nom, choix d'émoji cyber et palette de 7 teintes néon avec compteur d'onglets en direct.
+   * **Bascule instantanée** : Raccourcis globaux `Alt+1`, `Alt+2`, `Alt+3`, `Alt+4` ou clic sur les pilules.
+   * **Mise en veille automatique (Tab Hibernation 💤)** : Les onglets des espaces inactifs sont automatiquement déchargés de l'arrière-plan pour libérer 70 à 80 % de RAM, tout en affichant un badge discret `💤` et en se réveillant instantanément au clic.
+   * **Onglets épinglés (Pinned Tabs 📌)** : Format ultra-compact favicon verrouillé à gauche, persistant à travers les espaces.
+   * **Menu contextuel cyber au clic-droit sur onglet** : Épingler/Désépingler, Mettre en veille maintenant (`💤`), Déplacer vers un espace (sous-menu dynamique), Dupliquer, Couper le son, Fermer l'onglet ou les autres onglets.
+
 ---
 
 ## 🛡️ Protection & Navigation
@@ -72,6 +80,7 @@ Un navigateur web de bureau moderne, ultra-rapide et personnalisable, propulsé 
 | `Ctrl + F` | Rechercher dans la page |
 | `Ctrl + \` / `Ctrl + B` | Afficher / Masquer la barre latérale |
 | `Ctrl + Shift + A` | Afficher / Masquer le volet **NaviAI** (Assistant IA) |
+| `Alt + 1` à `Alt + 4` | Basculer instantanément d'espace de travail (Workspaces 1 à 4) |
 | `Alt + P` | Détacher la vidéo en Picture-in-Picture (PiP Gaming) |
 | `F12` | Ouvrir les Outils de Développement |
 

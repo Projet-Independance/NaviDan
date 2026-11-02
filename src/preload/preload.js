@@ -11,6 +11,22 @@ contextBridge.exposeInMainWorld('naviddan', {
   closeTab: (tabId) => ipcRenderer.invoke('tab:close', tabId),
   selectTab: (tabId) => ipcRenderer.invoke('tab:select', tabId),
   reorderTabs: (tabIds) => ipcRenderer.invoke('tab:reorder', tabIds),
+  togglePinTab: (tabId) => ipcRenderer.invoke('tab:toggle-pin', tabId),
+  moveTabToWorkspace: (tabId, wsId) => ipcRenderer.invoke('tab:move-to-workspace', { tabId, wsId }),
+  hibernateTab: (tabId) => ipcRenderer.invoke('tab:hibernate', tabId),
+  wakeTab: (tabId) => ipcRenderer.invoke('tab:wake', tabId),
+  duplicateTab: (tabId) => ipcRenderer.invoke('tab:duplicate', tabId),
+  closeOtherTabs: (tabId) => ipcRenderer.invoke('tab:close-others', tabId),
+  showTabContextMenu: (coords) => ipcRenderer.send('tab:show-context-menu', coords),
+
+  // --- Workspaces Management ---
+  getWorkspaces: () => ipcRenderer.invoke('workspaces:get'),
+  switchWorkspace: (id) => ipcRenderer.invoke('workspaces:switch', id),
+  addWorkspace: (ws) => ipcRenderer.invoke('workspaces:add', ws),
+  deleteWorkspace: (id) => ipcRenderer.invoke('workspaces:delete', id),
+  updateWorkspace: (ws) => ipcRenderer.invoke('workspaces:update', ws),
+  toggleWorkspacePopup: (coords) => ipcRenderer.send('workspaces:toggle-popup', coords),
+  onWorkspaceChanged: (cb) => ipcRenderer.on('workspace:changed', (_, data) => cb(data)),
 
   // --- Navigation ---
   navigate: (url) => ipcRenderer.send('nav:go', url),

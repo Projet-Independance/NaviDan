@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workspaces</title>
+  <link rel="stylesheet" href="popups-common.css">
+  <link rel="stylesheet" href="workspace-popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <div class="arrow-up"></div>
+
+    <header class="popup-header">
+      <div class="header-left">
+        <span class="header-icon">🪐</span>
+        <h2 class="title">ESPACES DE TRAVAIL</h2>
+      </div>
+      <button id="btn-close-popup" class="btn-close" title="Fermer">✕</button>
+    </header>
+
+    <div class="popup-scroll-body">
+      <!-- Existing Workspaces List -->
+      <span class="section-title">ESPACES ACTIFS</span>
+      <div id="workspaces-list" class="workspaces-list">
+        <!-- Rendered via JS -->
+      </div>
+
+      <!-- Add New Workspace Form -->
+      <span class="section-title" style="margin-top: 14px;">NOUVEL ESPACE</span>
+      <div class="ws-create-form">
+        <div class="form-row">
+          <input type="text" id="ws-input-name" class="ws-input" placeholder="Nom de l'espace (ex: Études, Crypto, Gaming...)" maxlength="24" />
+        </div>
+
+        <div class="picker-label">ICÔNE :</div>
+        <div id="ws-emoji-grid" class="ws-emoji-grid">
+          <button type="button" class="emoji-chip selected" data-emoji="🎮">🎮</button>
+          <button type="button" class="emoji-chip" data-emoji="💼">💼</button>
+          <button type="button" class="emoji-chip" data-emoji="🌐">🌐</button>
+          <button type="button" class="emoji-chip" data-emoji="⚡">⚡</button>
+          <button type="button" class="emoji-chip" data-emoji="🚀">🚀</button>
+          <button type="button" class="emoji-chip" data-emoji="📚">📚</button>
+          <button type="button" class="emoji-chip" data-emoji="🎵">🎵</button>
+          <button type="button" class="emoji-chip" data-emoji="🛡️">🛡️</button>
+          <button type="button" class="emoji-chip" data-emoji="💡">💡</button>
+          <button type="button" class="emoji-chip" data-emoji="🎬">🎬</button>
+          <button type="button" class="emoji-chip" data-emoji="👾">👾</button>
+          <button type="button" class="emoji-chip" data-emoji="🪐">🪐</button>
+        </div>
+
+        <div class="picker-label" style="margin-top: 8px;">COULEUR CYBER :</div>
+        <div id="ws-color-grid" class="ws-color-grid">
+          <button type="button" class="color-dot selected" data-color="#ef4444" style="--c: #ef4444; background: #ef4444;"></button>
+          <button type="button" class="color-dot" data-color="#3b82f6" style="--c: #3b82f6; background: #3b82f6;"></button>
+          <button type="button" class="color-dot" data-color="#10b981" style="--c: #10b981; background: #10b981;"></button>
+          <button type="button" class="color-dot" data-color="#a855f7" style="--c: #a855f7; background: #a855f7;"></button>
+          <button type="button" class="color-dot" data-color="#f59e0b" style="--c: #f59e0b; background: #f59e0b;"></button>
+          <button type="button" class="color-dot" data-color="#06b6d4" style="--c: #06b6d4; background: #06b6d4;"></button>
+          <button type="button" class="color-dot" data-color="#ec4899" style="--c: #ec4899; background: #ec4899;"></button>
+        </div>
+
+        <button id="btn-create-ws" class="ws-submit-btn" type="button">
+          + CRÉER L'ESPACE
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="workspace-popup.js"></script>
+</body>
+</html>
+

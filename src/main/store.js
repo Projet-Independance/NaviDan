@@ -56,6 +56,15 @@ class Store {
         { id: '5', title: 'Twitter / X', url: 'https://x.com', icon: '✖' },
         { id: '6', title: 'Twitch', url: 'https://www.twitch.tv', icon: '👾' }
       ],
+      workspaces: [
+        { id: 'gaming', name: 'Gaming', icon: '🎮', color: '#ef4444' },
+        { id: 'work', name: 'Travail', icon: '💼', color: '#3b82f6' },
+        { id: 'personal', name: 'Perso', icon: '🌐', color: '#10b981' },
+        { id: 'dev', name: 'Dev', icon: '⚡', color: '#a855f7' }
+      ],
+      activeWorkspaceId: 'gaming',
+      tabHibernationEnabled: true,
+      tabHibernationMinutes: 30,
       history: []
     };
     this.data = this.loadData();
@@ -227,6 +236,51 @@ class Store {
   setPipBounds(bounds) {
     this.data.pipBounds = bounds;
     this.saveData();
+  }
+
+  // --- Workspaces ---
+  getWorkspaces() {
+    return this.data.workspaces || this.defaults.workspaces;
+  }
+
+  getActiveWorkspaceId() {
+    return this.data.activeWorkspaceId || 'gaming';
+  }
+
+  setActiveWorkspaceId(id) {
+    this.data.activeWorkspaceId = id;
+    this.saveData();
+    return id;
+  }
+
+  saveWorkspaces(workspaces) {
+    this.data.workspaces = workspaces;
+    this.saveData();
+    return workspaces;
+  }
+
+  addWorkspace(ws) {
+    if (!this.data.workspaces) this.data.workspaces = [...this.defaults.workspaces];
+    const id = ws.id || 'ws_' + Date.now();
+    const entry = {
+      id,
+      name: ws.name || 'Nouvel espace',
+      icon: ws.icon || '🚀',
+      color: ws.color || '#3b82f6'
+    };
+    this.data.workspaces.push(entry);
+    this.saveData();
+    return entry;
+  }
+
+  deleteWorkspace(id) {
+    if (!this.data.workspaces || this.data.workspaces.length <= 1) return false;
+    this.data.workspaces = this.data.workspaces.filter(w => w.id !== id);
+    if (this.data.activeWorkspaceId === id) {
+      this.data.activeWorkspaceId = this.data.workspaces[0].id;
+    }
+    this.saveData();
+    return true;
   }
 }
 

@@ -2071,3 +2071,123 @@ input:checked + .slider:before {
   background: var(--accent-color);
   color: #fff;
 }
+
+
+/* ==========================================================================
+   WORKSPACES & GESTION D'ONGLETS PRO (PINNED & HIBERNATION)
+   ========================================================================== */
+
+/* Pinned Tabs (Compact, favicon-only, uncloseable) */
+.tab-item.pinned {
+  min-width: 38px !important;
+  max-width: 38px !important;
+  width: 38px !important;
+  padding: 0 !important;
+  justify-content: center !important;
+  position: relative;
+}
+
+.tab-item.pinned .tab-title,
+.tab-item.pinned .tab-close-btn {
+  display: none !important;
+}
+
+.tab-item.pinned .tab-pin-badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  font-size: 8px;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+/* Hibernated Tabs (RAM sleeping state) */
+.tab-item.hibernated {
+  opacity: 0.62;
+}
+
+.tab-item.hibernated:hover {
+  opacity: 0.9;
+}
+
+.tab-sleep-badge {
+  font-size: 11px;
+  line-height: 1;
+  margin-left: 2px;
+  opacity: 0.85;
+  animation: tab-sleep-pulse 2.2s infinite ease-in-out;
+}
+
+@keyframes tab-sleep-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.95); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+/* Sidebar Workspaces Section */
+.sidebar-workspaces {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding-bottom: 2px;
+}
+
+.ws-pill {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  user-select: none;
+}
+
+.ws-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px) scale(1.05);
+}
+
+.ws-pill.active {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--ws-color, var(--accent-color));
+  box-shadow: 0 0 10px var(--ws-color, var(--accent-color)), inset 0 0 6px rgba(255, 255, 255, 0.1);
+  transform: scale(1.06);
+}
+
+.ws-pill .ws-count-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  font-size: 8px;
+  font-family: monospace;
+  font-weight: 700;
+  background: var(--ws-color, var(--accent-color));
+  color: #fff;
+  border-radius: 5px;
+  padding: 1px 3px;
+  min-width: 11px;
+  text-align: center;
+  line-height: 1;
+}
+
+.ws-add-btn {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-muted);
+  border: 1px dashed rgba(255, 255, 255, 0.18) !important;
+  margin-top: 2px;
+}
+
+.ws-add-btn:hover {
+  border-color: var(--accent-color) !important;
+  color: var(--accent-color);
+  background: rgba(255, 255, 255, 0.06);
+}

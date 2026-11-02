@@ -48,6 +48,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Sidebar Elements
   const browserSidebarEl = document.getElementById('browser-sidebar');
+  const sidebarWorkspacesEl = document.getElementById('sidebar-workspaces');
+  const btnAddWorkspace = document.getElementById('btn-add-workspace');
   const sidebarBtnPerf = document.getElementById('sidebar-btn-perf');
   const sidebarBtnCleaner = document.getElementById('sidebar-btn-cleaner');
   const sidebarBtnPasswords = document.getElementById('sidebar-btn-passwords');
@@ -73,6 +75,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   let currentTabs = [];
   let activeTabId = null;
   let currentZoom = 100;
+  let currentWorkspaces = [];
+  let currentWorkspaceId = 'gaming';
   let settings = await window.naviddan.getSettings();
 
   // Apply initial settings
@@ -95,6 +99,65 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (browserSidebarEl) {
         browserSidebarEl.classList.toggle('collapsed', !visible);
       }
+    });
+  }
+
+  // Workspaces initialization
+  if (window.naviddan.getWorkspaces) {
+    const wsData = await window.naviddan.getWorkspaces();
+    if (wsData) {
+      currentWorkspaceId = wsData.activeWorkspaceId || 'gaming';
+      currentWorkspaces = wsData.workspaces || [];
+      const cur = currentWorkspaces.find(w => w.id === currentWorkspaceId);
+      if (cur?.color) {
+        document.documentElement.style.setProperty('--accent-color', cur.color);
+      }
+      renderWorkspaces();
+    }
+  }
+
+  if (window.naviddan.onWorkspaceChanged) {
+    window.naviddan.onWorkspaceChanged((data) => {
+      if (!data) return;
+      currentWorkspaceId = data.activeWorkspaceId || currentWorkspaceId;
+      currentWorkspaces = data.workspaces || currentWorkspaces;
+      if (data.workspace?.color) {
+        document.documentElement.style.setProperty('--accent-color', data.workspace.color);
+      }
+      renderWorkspaces();
+      renderTabs();
+    });
+  }
+
+  function renderWorkspaces() {
+    if (!sidebarWorkspacesEl) return;
+    sidebarWorkspacesEl.innerHTML = '';
+
+    currentWorkspaces.forEach(ws => {
+      const pill = document.createElement('div');
+      const isActive = ws.id === currentWorkspaceId;
+      const wsIcon = ws.icon || ws.emoji || '🪐';
+      pill.className = `ws-pill ${isActive ? 'active' : ''}`;
+      pill.title = `${wsIcon} ${ws.name} (Alt+...)`;
+      pill.style.setProperty('--ws-color', ws.color || '#3b82f6');
+
+      const emojiSpan = document.createElement('span');
+      emojiSpan.textContent = wsIcon;
+      pill.appendChild(emojiSpan);
+
+      const tabCount = currentTabs.filter(t => t.workspaceId === ws.id).length;
+      if (tabCount > 0) {
+        const badge = document.createElement('span');
+        badge.className = 'ws-count-badge';
+        badge.textContent = tabCount;
+        pill.appendChild(badge);
+      }
+
+      pill.addEventListener('click', () => {
+        window.naviddan.switchWorkspace?.(ws.id);
+      });
+
+      sidebarWorkspacesEl.appendChild(pill);
     });
   }
 
@@ -146,6 +209,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   sidebarBtnBookmarks?.addEventListener('click', (e) => {
     e.stopPropagation();
     window.naviddan.openBookmarksMenu(getSidebarAnchorCoords(sidebarBtnBookmarks));
+  });
+
+  btnAddWorkspace?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    window.naviddan.toggleWorkspacePopup?.(getSidebarAnchorCoords(btnAddWorkspace));
   });
 
   // Window Controls
@@ -585,7 +653,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const idx = currentTabs.findIndex(t => t.id === tab.id);
     if (idx !== -1) {
       currentTabs[idx] = tab;
-      updateTabElement(tab);
+      renderTabs();
       if (tab.id === activeTabId) {
         updateNavbarState(tab);
         updateActivePageContext();
@@ -674,10 +742,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!tabsListEl) return;
     tabsListEl.innerHTML = '';
 
-    currentTabs.forEach((tab) => {
+    // Filter tabs: pinned first, then tabs belonging to the current workspace
+    const pinnedTabs = currentTabs.filter(t => !!t.isPinned);
+    const wsTabs = currentTabs.filter(t => !t.isPinned && (t.workspaceId === currentWorkspaceId || !t.workspaceId));
+    const visibleTabs = [...pinnedTabs, ...wsTabs];
+
+    visibleTabs.forEach((tab) => {
       const tabEl = document.createElement('div');
-      tabEl.className = `tab-item ${tab.id === activeTabId ? 'active' : ''} ${tab.isIncognito ? 'incognito' : ''}`;
+      const isPinned = !!tab.isPinned;
+      const isHibernated = !!tab.isHibernated;
+
+      tabEl.className = `tab-item ${tab.id === activeTabId ? 'active' : ''} ${tab.isIncognito ? 'incognito' : ''} ${isPinned ? 'pinned' : ''} ${isHibernated ? 'hibernated' : ''}`;
       tabEl.id = `tab-${tab.id}`;
+      tabEl.dataset.tabId = tab.id;
+
+      if (isPinned) {
+        const pinBadge = document.createElement('span');
+        pinBadge.className = 'tab-pin-badge';
+        pinBadge.textContent = '📌';
+        tabEl.appendChild(pinBadge);
+      }
 
       const favicon = document.createElement('span');
       favicon.className = 'tab-favicon';
@@ -687,6 +771,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       title.className = 'tab-title';
       title.textContent = tab.title || (tab.isIncognito ? 'Navigation privée' : 'Nouvel onglet');
       title.title = tab.title || '';
+
+      if (isHibernated) {
+        const sleepBadge = document.createElement('span');
+        sleepBadge.className = 'tab-sleep-badge';
+        sleepBadge.textContent = '💤';
+        sleepBadge.title = 'Onglet en veille (mémoire RAM libérée)';
+        title.appendChild(sleepBadge);
+      }
 
       // Tab Audio Focus Indicator & Mute Button
       const audioBtn = document.createElement('button');
@@ -740,12 +832,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.naviddan.selectTab(tab.id);
       });
 
+      // Tab Cyber Right-Click Context Menu
+      tabEl.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        window.naviddan.showTabContextMenu?.({
+          tabId: tab.id,
+          x: e.screenX,
+          y: e.screenY
+        });
+      });
+
       tabEl.appendChild(favicon);
       tabEl.appendChild(title);
       tabEl.appendChild(audioBtn);
       tabEl.appendChild(closeBtn);
       tabsListEl.appendChild(tabEl);
     });
+
+    renderWorkspaces();
   }
 
   function updateTabAudioVisuals(tabEl, tab) {

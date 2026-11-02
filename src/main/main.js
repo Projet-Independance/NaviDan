@@ -1,4 +1,4 @@
-const { app, BrowserWindow, BrowserView, ipcMain, shell, dialog, session, screen, globalShortcut, clipboard, ClipboardItem, nativeImage, Notification } = require('electron');
+const { app, BrowserWindow, BrowserView, ipcMain, shell, dialog, session, screen, globalShortcut, clipboard, ClipboardItem, nativeImage, Notification, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -17,6 +17,7 @@ let downloads = [];
 let isSidebarVisible = true;
 let isNaviAIOpen = false;
 let naviAIWidth = 380;
+let currentActiveWorkspaceId = 'gaming';
 let pipWindow = null;
 let pipSourceTabId = null;
 let isTurboModeActive = false;
@@ -31,7 +32,8 @@ const popups = {
   cleaner: null,
   passwords: null,
   themes: null,
-  audio: null
+  audio: null,
+  workspaces: null
 };
 
 function closeAllPopups(exceptKey = null) {
@@ -277,6 +279,10 @@ function createTab(initialUrl = null, isIncognito = false) {
     isIncognito: !!isIncognito,
     url: urlToLoad,
     title: isIncognito ? 'Navigation privée' : 'Nouvel onglet',
+    workspaceId: currentActiveWorkspaceId,
+    isPinned: false,
+    isHibernated: false,
+    lastActiveTime: Date.now(),
     canGoBack: false,
     canGoForward: false,
     isLoading: false,
@@ -341,6 +347,9 @@ function createTab(initialUrl = null, isIncognito = false) {
         title: tabData.title,
         url: tabData.url,
         isIncognito: tabData.isIncognito,
+        workspaceId: tabData.workspaceId,
+        isPinned: !!tabData.isPinned,
+        isHibernated: !!tabData.isHibernated,
         isAudible: !!tabData.isAudible,
         isMuted: !!tabData.isMuted
       });
@@ -358,6 +367,9 @@ function createTab(initialUrl = null, isIncognito = false) {
         title: tabData.title,
         url: tabData.url,
         isIncognito: tabData.isIncognito,
+        workspaceId: tabData.workspaceId,
+        isPinned: !!tabData.isPinned,
+        isHibernated: !!tabData.isHibernated,
         isAudible: !!tabData.isAudible,
         isMuted: !!tabData.isMuted
       });
@@ -379,6 +391,9 @@ function createTab(initialUrl = null, isIncognito = false) {
         title: tabData.title,
         url: tabData.url,
         isIncognito: tabData.isIncognito,
+        workspaceId: tabData.workspaceId,
+        isPinned: !!tabData.isPinned,
+        isHibernated: !!tabData.isHibernated,
         isAudible: !!tabData.isAudible,
         isMuted: !!tabData.isMuted
       });
@@ -408,6 +423,9 @@ function createTab(initialUrl = null, isIncognito = false) {
       title: tabData.title,
       url: tabData.url,
       isIncognito: tabData.isIncognito,
+      workspaceId: tabData.workspaceId,
+      isPinned: !!tabData.isPinned,
+      isHibernated: !!tabData.isHibernated,
       isAudible: false,
       isMuted: false
     });
@@ -671,6 +689,27 @@ function selectTab(tabId) {
   if (!mainWindow || !tabs.has(tabId)) return;
   const targetTab = tabs.get(tabId);
 
+  // If tab was hibernated, wake it up immediately!
+  if (targetTab.isHibernated) {
+    targetTab.isHibernated = false;
+    try {
+      targetTab.view.webContents.setBackgroundThrottling(false);
+    } catch {}
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('tab:updated', {
+        id: tabId,
+        title: targetTab.title,
+        url: targetTab.url,
+        isIncognito: targetTab.isIncognito,
+        workspaceId: targetTab.workspaceId,
+        isPinned: !!targetTab.isPinned,
+        isHibernated: false,
+        isAudible: !!targetTab.isAudible,
+        isMuted: !!targetTab.isMuted
+      });
+    }
+  }
+
   // Auto-detach PiP when switching away from a playing video
   if (activeTabId && activeTabId !== tabId && tabs.has(activeTabId)) {
     const prevTab = tabs.get(activeTabId);
@@ -700,6 +739,7 @@ function selectTab(tabId) {
   }
 
   activeTabId = tabId;
+  targetTab.lastActiveTime = Date.now();
   mainWindow.setBrowserView(targetTab.view);
   updateActiveViewBounds();
 
@@ -736,15 +776,163 @@ function closeTab(tabId) {
     broadcastAudioSummary();
   }
 
-  // If active tab was closed, pick another tab or create new one
+  // If active tab was closed, pick another tab belonging to current workspace
   if (activeTabId === tabId) {
-    const remainingTabIds = Array.from(tabs.keys());
-    if (remainingTabIds.length > 0) {
-      selectTab(remainingTabIds[remainingTabIds.length - 1]);
+    const wsTabIds = Array.from(tabs.values())
+      .filter(t => t.workspaceId === currentActiveWorkspaceId)
+      .map(t => t.id);
+    if (wsTabIds.length > 0) {
+      selectTab(wsTabIds[wsTabIds.length - 1]);
     } else {
       createTab();
     }
   }
+}
+
+// --- Workspaces & Advanced Tab Operations ---
+function switchWorkspace(targetWsId) {
+  if (!store) return;
+  const workspaces = store.getWorkspaces();
+  const ws = workspaces.find(w => w.id === targetWsId);
+  if (!ws) return;
+
+  currentActiveWorkspaceId = targetWsId;
+  store.setActiveWorkspaceId(targetWsId);
+
+  // Auto-hibernate tabs from inactive workspaces (libère 70-80% de RAM)
+  for (const [id, tab] of tabs.entries()) {
+    if (tab.workspaceId !== targetWsId && !tab.isPinned) {
+      if (!tab.isAudible && (!pipWindow || pipSourceTabId !== id)) {
+        tab.isHibernated = true;
+        try {
+          tab.view.webContents.setBackgroundThrottling(true);
+        } catch {}
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('tab:updated', {
+            id: tab.id,
+            title: tab.title,
+            url: tab.url,
+            isIncognito: tab.isIncognito,
+            workspaceId: tab.workspaceId,
+            isPinned: false,
+            isHibernated: true,
+            isAudible: !!tab.isAudible,
+            isMuted: !!tab.isMuted
+          });
+        }
+      }
+    }
+  }
+
+  // Find tabs belonging to target workspace or pinned tabs
+  const wsTabs = Array.from(tabs.values()).filter(t => t.workspaceId === targetWsId || t.isPinned);
+  if (wsTabs.length > 0) {
+    const target = wsTabs.find(t => !t.isHibernated) || wsTabs[0];
+    selectTab(target.id);
+  } else {
+    createTab();
+  }
+
+  broadcastWorkspaces();
+}
+
+function broadcastWorkspaces() {
+  if (!mainWindow || mainWindow.isDestroyed() || !store) return;
+  mainWindow.webContents.send('workspace:changed', {
+    activeWorkspaceId: currentActiveWorkspaceId,
+    workspace: store.getWorkspaces().find(w => w.id === currentActiveWorkspaceId),
+    workspaces: store.getWorkspaces()
+  });
+}
+
+function togglePinTab(tabId, state) {
+  const tab = tabs.get(tabId);
+  if (!tab) return false;
+  tab.isPinned = state !== undefined ? Boolean(state) : !tab.isPinned;
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('tab:updated', {
+      id: tab.id,
+      title: tab.title,
+      url: tab.url,
+      isIncognito: tab.isIncognito,
+      workspaceId: tab.workspaceId,
+      isPinned: tab.isPinned,
+      isHibernated: !!tab.isHibernated,
+      isAudible: !!tab.isAudible,
+      isMuted: !!tab.isMuted
+    });
+  }
+  return tab.isPinned;
+}
+
+function moveTabToWorkspace(tabId, targetWsId) {
+  const tab = tabs.get(tabId);
+  if (!tab) return false;
+  tab.workspaceId = targetWsId;
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('tab:updated', {
+      id: tab.id,
+      title: tab.title,
+      url: tab.url,
+      isIncognito: tab.isIncognito,
+      workspaceId: tab.workspaceId,
+      isPinned: !!tab.isPinned,
+      isHibernated: !!tab.isHibernated,
+      isAudible: !!tab.isAudible,
+      isMuted: !!tab.isMuted
+    });
+  }
+  if (activeTabId === tabId && targetWsId !== currentActiveWorkspaceId) {
+    const remaining = Array.from(tabs.values()).filter(t => t.workspaceId === currentActiveWorkspaceId && t.id !== tabId);
+    if (remaining.length > 0) {
+      selectTab(remaining[0].id);
+    } else {
+      createTab();
+    }
+  }
+  return true;
+}
+
+function hibernateTab(tabId) {
+  const tab = tabs.get(tabId);
+  if (!tab || activeTabId === tabId) return false;
+  tab.isHibernated = true;
+  try {
+    tab.view.webContents.setBackgroundThrottling(true);
+  } catch {}
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('tab:updated', {
+      id: tab.id,
+      title: tab.title,
+      url: tab.url,
+      isIncognito: tab.isIncognito,
+      workspaceId: tab.workspaceId,
+      isPinned: !!tab.isPinned,
+      isHibernated: true,
+      isAudible: !!tab.isAudible,
+      isMuted: !!tab.isMuted
+    });
+  }
+  return true;
+}
+
+function duplicateTab(tabId) {
+  const tab = tabs.get(tabId);
+  if (!tab) return null;
+  return createTab(tab.url, tab.isIncognito);
+}
+
+function closeOtherTabs(tabId) {
+  const allTabIds = Array.from(tabs.keys());
+  for (const id of allTabIds) {
+    if (id !== tabId) {
+      const t = tabs.get(id);
+      if (t && !t.isPinned) {
+        closeTab(id);
+      }
+    }
+  }
+  return true;
 }
 
 function createWindow() {
@@ -816,6 +1004,99 @@ function registerIpcHandlers() {
   ipcMain.on('tab:open-new', (e, url) => {
     createTab(url);
   });
+  ipcMain.handle('tab:toggle-pin', (e, tabId) => togglePinTab(tabId));
+  ipcMain.handle('tab:move-to-workspace', (e, { tabId, wsId }) => moveTabToWorkspace(tabId, wsId));
+  ipcMain.handle('tab:hibernate', (e, tabId) => hibernateTab(tabId));
+  ipcMain.handle('tab:wake', (e, tabId) => selectTab(tabId));
+  ipcMain.handle('tab:duplicate', (e, tabId) => duplicateTab(tabId));
+  ipcMain.handle('tab:close-others', (e, tabId) => closeOtherTabs(tabId));
+
+  ipcMain.on('tab:show-context-menu', (e, { tabId, x, y }) => {
+    const tab = tabs.get(tabId);
+    if (!tab) return;
+    const workspaces = store.getWorkspaces();
+    const currentWsId = tab.workspaceId || currentActiveWorkspaceId;
+    const menu = Menu.buildFromTemplate([
+      {
+        label: tab.isPinned ? '📌 Désépingler l\'onglet' : '📌 Épingler l\'onglet',
+        click: () => togglePinTab(tabId)
+      },
+      {
+        label: tab.isHibernated ? '⚡ Réveiller l\'onglet' : '💤 Mettre en veille maintenant',
+        click: () => {
+          if (tab.isHibernated) {
+            selectTab(tabId);
+          } else {
+            hibernateTab(tabId);
+          }
+        }
+      },
+      {
+        label: '📁 Déplacer vers l\'espace',
+        submenu: workspaces.map(w => ({
+          label: `${w.icon || w.emoji || '📁'} ${w.name}${w.id === currentWsId ? ' (Actuel)' : ''}`,
+          enabled: w.id !== currentWsId,
+          click: () => moveTabToWorkspace(tabId, w.id)
+        }))
+      },
+      { type: 'separator' },
+      {
+        label: '👯 Dupliquer l\'onglet',
+        click: () => duplicateTab(tabId)
+      },
+      {
+        label: tab.isMuted ? '🔊 Rétablir le son' : '🔇 Couper le son',
+        click: () => toggleTabMute(tabId)
+      },
+      { type: 'separator' },
+      {
+        label: '✕ Fermer l\'onglet',
+        click: () => closeTab(tabId)
+      },
+      {
+        label: '✕ Fermer les autres onglets',
+        click: () => closeOtherTabs(tabId)
+      }
+    ]);
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      menu.popup({
+        window: mainWindow,
+        x: Math.round(x),
+        y: Math.round(y)
+      });
+    }
+  });
+
+  // Workspaces
+  ipcMain.handle('workspaces:get', () => ({
+    activeWorkspaceId: currentActiveWorkspaceId,
+    workspaces: store.getWorkspaces()
+  }));
+  ipcMain.handle('workspaces:switch', (e, wsId) => {
+    switchWorkspace(wsId);
+    return true;
+  });
+  ipcMain.handle('workspaces:add', (e, ws) => {
+    const entry = store.addWorkspace(ws);
+    broadcastWorkspaces();
+    return entry;
+  });
+  ipcMain.handle('workspaces:delete', (e, wsId) => {
+    const ok = store.deleteWorkspace(wsId);
+    if (ok) broadcastWorkspaces();
+    return ok;
+  });
+  ipcMain.handle('workspaces:update', (e, ws) => {
+    const list = store.getWorkspaces().map(w => w.id === ws.id ? { ...w, ...ws } : w);
+    store.saveWorkspaces(list);
+    broadcastWorkspaces();
+    return true;
+  });
+  ipcMain.on('workspaces:toggle-popup', (e, coords) => {
+    toggleAnchoredPopup('workspaces', coords, 360, 560, '../pages/workspace-popup.html', '../preload/workspace-preload.js');
+  });
+  ipcMain.on('workspaces:close', () => closeAllPopups());
 
   // Navigation
   ipcMain.on('nav:go', (e, input) => {
@@ -1695,6 +1976,7 @@ app.whenReady().then(() => {
     app.setAppUserModelId?.('com.naviddan.browser');
   }
   store = new Store();
+  currentActiveWorkspaceId = store.getActiveWorkspaceId() || 'gaming';
   naviAIService = new NaviAIService(store);
   const aiConf = naviAIService.getSettings();
   if (aiConf.panelWidth) {
@@ -1756,6 +2038,19 @@ app.whenReady().then(() => {
   } catch (err) {
     console.warn('Could not register NaviAI shortcut:', err);
   }
+
+  // Workspaces Instant Shortcuts (Alt+1 to Alt+4)
+  [1, 2, 3, 4].forEach(num => {
+    try {
+      globalShortcut.register(`Alt+${num}`, () => {
+        if (!store) return;
+        const list = store.getWorkspaces();
+        if (list[num - 1]) {
+          switchWorkspace(list[num - 1].id);
+        }
+      });
+    } catch {}
+  });
 
   // Real-time Audio Focus Watchdog for all tabs (500ms)
   setInterval(() => {
