@@ -5,14 +5,18 @@ const os = require('os');
 const { pathToFileURL } = require('url');
 const Store = require('./store');
 const adblock = require('./adblock');
+const NaviAIService = require('./naviai');
 
 let mainWindow = null;
 let store = null;
+let naviAIService = null;
 let tabs = new Map(); // tabId -> { id, view, isIncognito, url, title }
 let activeTabId = null;
 let nextTabId = 1;
 let downloads = [];
 let isSidebarVisible = true;
+let isNaviAIOpen = false;
+let naviAIWidth = 380;
 let pipWindow = null;
 let pipSourceTabId = null;
 let isTurboModeActive = false;
@@ -112,6 +116,10 @@ function getSidebarWidth() {
   return isSidebarVisible ? 44 : 0;
 }
 
+function getNaviAIWidth() {
+  return isNaviAIOpen ? naviAIWidth : 0;
+}
+
 function updateActiveViewBounds() {
   if (!mainWindow || !activeTabId) return;
   const tab = tabs.get(activeTabId);
@@ -120,11 +128,12 @@ function updateActiveViewBounds() {
   const [width, height] = mainWindow.getContentSize();
   const chromeHeight = getChromeHeight();
   const sidebarWidth = getSidebarWidth();
+  const aiWidth = getNaviAIWidth();
   
   tab.view.setBounds({
     x: sidebarWidth,
     y: chromeHeight,
-    width: Math.max(100, width - sidebarWidth),
+    width: Math.max(100, width - sidebarWidth - aiWidth),
     height: Math.max(100, height - chromeHeight)
   });
   tab.view.setAutoResize({ width: true, height: true });
@@ -163,6 +172,16 @@ function setupSession(ses) {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('adblock:blocked', blockData);
     }
+  });
+
+  // Allow embedding Duck.ai inside the sidebar iframe
+  ses.webRequest.onHeadersReceived({ urls: ['*://*.duck.ai/*', '*://*.duckduckgo.com/*'] }, (details, callback) => {
+    const responseHeaders = { ...details.responseHeaders };
+    delete responseHeaders['x-frame-options'];
+    delete responseHeaders['X-Frame-Options'];
+    delete responseHeaders['content-security-policy'];
+    delete responseHeaders['Content-Security-Policy'];
+    callback({ cancel: false, responseHeaders });
   });
 
   // Download handling
@@ -1552,6 +1571,121 @@ function registerIpcHandlers() {
   });
 
   ipcMain.on('audio:close', () => closeAllPopups());
+
+  // --- NaviAI Assistant IPC ---
+  ipcMain.handle('naviai:get-sidebar-state', () => ({
+    isOpen: isNaviAIOpen,
+    width: naviAIWidth
+  }));
+
+  ipcMain.handle('naviai:toggle-sidebar', (e, forceState) => {
+    isNaviAIOpen = forceState !== undefined ? Boolean(forceState) : !isNaviAIOpen;
+    updateActiveViewBounds();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('naviai:sidebar-changed', {
+        isOpen: isNaviAIOpen,
+        width: naviAIWidth
+      });
+    }
+    return isNaviAIOpen;
+  });
+
+  ipcMain.handle('naviai:get-settings', () => {
+    if (!naviAIService) return {};
+    return naviAIService.getSettings();
+  });
+
+  ipcMain.handle('naviai:save-settings', (e, newSettings) => {
+    if (!naviAIService) return {};
+    if (newSettings && typeof newSettings.panelWidth === 'number') {
+      naviAIWidth = Math.max(280, Math.min(700, newSettings.panelWidth));
+      updateActiveViewBounds();
+    }
+    return naviAIService.saveSettings(newSettings);
+  });
+
+  ipcMain.handle('naviai:get-ollama-models', async (e, customUrl) => {
+    if (!naviAIService) return [];
+    return await naviAIService.getOllamaModels(customUrl);
+  });
+
+  ipcMain.handle('naviai:get-page-content', async () => {
+    if (!activeTabId) return null;
+    const tab = tabs.get(activeTabId);
+    if (!tab || !tab.view || tab.view.webContents.isDestroyed()) return null;
+
+    try {
+      const data = await tab.view.webContents.executeJavaScript(`
+        (() => {
+          try {
+            const title = document.title || '';
+            const url = window.location.href || '';
+            const metaDesc = document.querySelector('meta[name="description"]')?.content || '';
+            
+            const clone = document.body.cloneNode(true);
+            const removeTags = ['script', 'style', 'noscript', 'svg', 'iframe', 'canvas', 'header', 'footer', 'nav', '#naviddan-pip-badge', '#naviddan-ai-selection-bubble'];
+            removeTags.forEach(tag => {
+              clone.querySelectorAll(tag).forEach(el => el.remove());
+            });
+            
+            let text = clone.innerText || '';
+            text = text.replace(/\\r\\n/g, '\\n').replace(/\\n{3,}/g, '\\n\\n').replace(/[ \\t]{2,}/g, ' ').trim();
+            if (text.length > 12000) {
+              text = text.substring(0, 12000) + '\\n\\n[... Contenu tronqué pour respecter le budget de contexte]';
+            }
+            return { title, url, metaDesc, content: text };
+          } catch (e) {
+            return { title: document.title, url: window.location.href, content: '' };
+          }
+        })()
+      `);
+      return data;
+    } catch (err) {
+      return null;
+    }
+  });
+
+  ipcMain.on('naviai:send-prompt', (e, payload) => {
+    if (!naviAIService) return;
+    naviAIService.streamChat(
+      payload,
+      (chunk) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('naviai:stream-chunk', chunk);
+        }
+      },
+      () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('naviai:stream-done');
+        }
+      },
+      (err) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('naviai:stream-error', err);
+        }
+      }
+    );
+  });
+
+  ipcMain.on('naviai:stop-stream', () => {
+    if (naviAIService) naviAIService.stopCurrentStream();
+  });
+
+  ipcMain.on('naviai:open-with-selection', (e, data) => {
+    if (!isNaviAIOpen) {
+      isNaviAIOpen = true;
+      updateActiveViewBounds();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('naviai:sidebar-changed', {
+          isOpen: true,
+          width: naviAIWidth
+        });
+      }
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('naviai:trigger-prompt', data);
+    }
+  });
 }
 
 // App lifecycle
@@ -1561,6 +1695,11 @@ app.whenReady().then(() => {
     app.setAppUserModelId?.('com.naviddan.browser');
   }
   store = new Store();
+  naviAIService = new NaviAIService(store);
+  const aiConf = naviAIService.getSettings();
+  if (aiConf.panelWidth) {
+    naviAIWidth = Math.max(280, Math.min(700, aiConf.panelWidth));
+  }
   isSidebarVisible = store.getSettings().sidebarVisible !== false;
   setupSession(session.defaultSession);
   registerIpcHandlers();
@@ -1600,6 +1739,22 @@ app.whenReady().then(() => {
     });
   } catch (err) {
     console.warn('Could not register Snipper shortcut:', err);
+  }
+
+  // Global shortcut for NaviAI Sidebar (Ctrl+Shift+A)
+  try {
+    globalShortcut.register('CommandOrControl+Shift+A', () => {
+      isNaviAIOpen = !isNaviAIOpen;
+      updateActiveViewBounds();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('naviai:sidebar-changed', {
+          isOpen: isNaviAIOpen,
+          width: naviAIWidth
+        });
+      }
+    });
+  } catch (err) {
+    console.warn('Could not register NaviAI shortcut:', err);
   }
 
   // Real-time Audio Focus Watchdog for all tabs (500ms)

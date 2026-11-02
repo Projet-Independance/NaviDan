@@ -139,6 +139,18 @@
           <span class="turbo-text">⚡ TURBO</span>
         </button>
 
+        <!-- NaviAI Assistant Toggle Button -->
+        <button id="btn-naviai" class="action-btn naviai-toolbar-btn" title="Assistant NaviAI (Ctrl+Shift+A) : Résumé, Traduction & Chat IA">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+            <rect x="4" y="8" width="16" height="12" rx="3"/>
+            <circle cx="9" cy="13" r="1.5" fill="currentColor"/>
+            <circle cx="15" cy="13" r="1.5" fill="currentColor"/>
+            <path d="M9 17h6"/>
+          </svg>
+          <span class="naviai-toolbar-label">NaviAI</span>
+        </button>
+
         <!-- Audio Focus Controller Group -->
         <div class="audio-action-group">
           <button id="btn-audio-mute" class="action-btn audio-btn" title="Muter / Rétablir l'onglet actif (Ctrl+M)">
@@ -236,6 +248,17 @@
     <!-- Left Sleek Collapsible Sidebar (44px) -->
     <aside id="browser-sidebar" class="browser-sidebar">
       <div class="sidebar-top-actions">
+        <!-- NaviAI Assistant -->
+        <button id="sidebar-btn-ai" class="sidebar-btn" title="NaviAI • Assistant intelligent (Ctrl+Shift+A)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="8" width="16" height="12" rx="3"/>
+            <circle cx="9" cy="13" r="1.5" fill="currentColor"/>
+            <circle cx="15" cy="13" r="1.5" fill="currentColor"/>
+            <path d="M9 17h6"/>
+            <path d="M12 2v4"/>
+          </svg>
+        </button>
+
         <!-- Performance / NaviControl -->
         <button id="sidebar-btn-perf" class="sidebar-btn" title="NaviControl • Limiteurs & Performances (RAM/CPU)">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -299,6 +322,162 @@
 
     <!-- Web View Container placeholder (BrowserView displays to the right of sidebar) -->
     <div id="webview-spacer" class="webview-spacer"></div>
+
+    <!-- NaviAI Right Docked Sidebar Panel -->
+    <aside id="naviai-panel" class="naviai-panel hidden">
+      <!-- Drag resizer handle on left border -->
+      <div id="naviai-resizer" class="naviai-resizer" title="Glisser pour redimensionner"></div>
+
+      <!-- Header -->
+      <div class="naviai-header">
+        <div class="naviai-header-title">
+          <span class="naviai-logo">⚡</span>
+          <span class="naviai-title-text">NaviAI</span>
+          <span id="naviai-model-badge" class="naviai-model-badge" title="Modèle actif">Gemini 1.5 Flash</span>
+        </div>
+        <div class="naviai-header-actions">
+          <button id="naviai-btn-settings" class="naviai-icon-btn" title="Paramètres & Clés API">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
+          <button id="naviai-btn-clear" class="naviai-icon-btn" title="Effacer la conversation">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+          </button>
+          <button id="naviai-btn-close" class="naviai-icon-btn close" title="Fermer (Ctrl+Shift+A)">✕</button>
+        </div>
+      </div>
+
+      <!-- Mode Switcher Tabs -->
+      <div class="naviai-mode-bar">
+        <button id="naviai-tab-assist" class="naviai-mode-btn active" title="Assistant intégré connecté aux pages">
+          ⚡ Assistant Web
+        </button>
+        <button id="naviai-tab-duck" class="naviai-mode-btn" title="Duck.ai : IA 100% Gratuite (sans clé, sans compte)">
+          <span class="free-pill">GRATUIT</span>
+          🌐 Duck.ai Chat
+        </button>
+      </div>
+
+      <!-- Settings Drawer Modal (in-sidebar) -->
+      <div id="naviai-settings-drawer" class="naviai-settings-drawer hidden">
+        <div class="drawer-header">
+          <span>⚙️ Configuration NaviAI</span>
+          <button id="naviai-settings-close-btn" class="drawer-close-btn">✕</button>
+        </div>
+        <div class="drawer-body">
+          <label class="setting-label">Moteur IA :</label>
+          <select id="naviai-provider-select" class="naviai-select">
+            <option value="gemini">Google Gemini (Flash 1.5 / 2.0 - Gratuit)</option>
+            <option value="groq">Groq Llama 3.3 (Ultra-rapide - Gratuit)</option>
+            <option value="openai">OpenAI (GPT-4o mini)</option>
+            <option value="ollama">Ollama (Local / Hors-ligne)</option>
+          </select>
+
+          <!-- Cloud API Keys -->
+          <div id="naviai-group-gemini" class="provider-key-group">
+            <div class="free-info-box">
+              <span>🎁 <strong>100% Gratuit</strong> : Google offre 1 500 requêtes/jour sans carte bancaire.</span>
+              <button id="naviai-link-gemini" class="free-link-btn" type="button">🔑 Obtenir ma clé gratuite en 1 clic ↗</button>
+            </div>
+            <label class="setting-label" style="margin-top:6px;">Clé API Google Gemini :</label>
+            <div class="password-input-row">
+              <input type="password" id="naviai-key-gemini" placeholder="AIzaSy..." class="naviai-input" />
+              <button class="naviai-key-eye" data-target="naviai-key-gemini" type="button">👁️</button>
+            </div>
+          </div>
+
+          <div id="naviai-group-groq" class="provider-key-group hidden">
+            <div class="free-info-box">
+              <span>⚡ <strong>100% Gratuit</strong> : Groq offre 14 400 requêtes/jour ultra-rapides.</span>
+              <button id="naviai-link-groq" class="free-link-btn" type="button">🔑 Obtenir ma clé Groq gratuite ↗</button>
+            </div>
+            <label class="setting-label" style="margin-top:6px;">Clé API Groq :</label>
+            <div class="password-input-row">
+              <input type="password" id="naviai-key-groq" placeholder="gsk_..." class="naviai-input" />
+              <button class="naviai-key-eye" data-target="naviai-key-groq" type="button">👁️</button>
+            </div>
+          </div>
+
+          <div id="naviai-group-openai" class="provider-key-group hidden">
+            <label class="setting-label">Clé API OpenAI :</label>
+            <div class="password-input-row">
+              <input type="password" id="naviai-key-openai" placeholder="sk-..." class="naviai-input" />
+              <button class="naviai-key-eye" data-target="naviai-key-openai" type="button">👁️</button>
+            </div>
+          </div>
+
+          <!-- Ollama Local Config -->
+          <div id="naviai-group-ollama" class="provider-key-group hidden">
+            <label class="setting-label">URL Serveur Ollama :</label>
+            <div class="ollama-row">
+              <input type="text" id="naviai-ollama-url" value="http://127.0.0.1:11434" class="naviai-input" />
+              <button id="naviai-btn-scan-ollama" class="naviai-scan-btn" title="Scanner les modèles" type="button">🔄</button>
+            </div>
+            <label class="setting-label" style="margin-top:6px;">Modèle local détecté :</label>
+            <select id="naviai-ollama-model-select" class="naviai-select">
+              <option value="llama3">llama3</option>
+            </select>
+            <span class="setting-hint">100% privé, sans connexion internet.</span>
+          </div>
+
+          <label class="setting-label" style="margin-top:10px;">Modèle spécifique :</label>
+          <input type="text" id="naviai-custom-model" class="naviai-input" placeholder="ex: gemini-1.5-flash" />
+
+          <button id="naviai-btn-save-settings" class="naviai-save-btn" type="button">Enregistrer</button>
+        </div>
+      </div>
+
+      <!-- Native Assistant View (Chat + Page Tools) -->
+      <div id="naviai-view-assist" class="naviai-view-box">
+        <!-- Quick Action Chips -->
+        <div class="naviai-quick-bar">
+          <button id="naviai-chip-summary" class="naviai-chip" title="Résumer la page">⚡ Résumer</button>
+          <button id="naviai-chip-translate" class="naviai-chip" title="Traduire le contenu">🌐 Traduire</button>
+          <button id="naviai-chip-keypoints" class="naviai-chip" title="Extraire les points clés">🔑 Points clés</button>
+          <button id="naviai-chip-explain" class="naviai-chip" title="Expliquer simplement">💡 Expliquer</button>
+        </div>
+
+        <!-- Messages Stream View -->
+        <div id="naviai-messages" class="naviai-messages">
+          <div class="naviai-welcome">
+            <div class="welcome-icon">⚡</div>
+            <h3>NaviAI Assistant</h3>
+            <p>Pose une question ou résume la page. Pour discuter immédiatement sans clé API, clique sur l'onglet <strong>🌐 Duck.ai Chat</strong>.</p>
+          </div>
+        </div>
+
+        <!-- Active Page Context Badge in Footer -->
+        <div id="naviai-context-pill" class="naviai-context-pill" title="Clique pour activer ou désactiver l'envoi de la page active">
+          <span class="context-led"></span>
+          <span class="context-label">Page active : </span>
+          <span id="naviai-context-title" class="context-title">Chargement...</span>
+          <button id="naviai-btn-toggle-context" class="context-toggle-btn" title="Activer/Désactiver">✓</button>
+        </div>
+
+        <!-- Input Area -->
+        <div class="naviai-footer">
+          <textarea id="naviai-input" placeholder="Demander à NaviAI (Entrée pour envoyer, Maj+Entrée pour saut de ligne)..." rows="1"></textarea>
+          <div class="naviai-footer-controls">
+            <button id="naviai-btn-stop" class="naviai-stop-btn hidden" title="Arrêter la réponse">⏹ Arrêter</button>
+            <button id="naviai-btn-send" class="naviai-send-btn" title="Envoyer">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Free Web AI View (Duck.ai Chat) -->
+      <div id="naviai-view-duck" class="naviai-view-box hidden">
+        <iframe id="naviai-duck-frame" class="naviai-embed-frame" src="about:blank" title="Duck.ai Free Chat"></iframe>
+      </div>
+    </aside>
   </div>
 
   <script src="renderer.js"></script>

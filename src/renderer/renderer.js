@@ -588,6 +588,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateTabElement(tab);
       if (tab.id === activeTabId) {
         updateNavbarState(tab);
+        updateActivePageContext();
       }
     }
   });
@@ -605,6 +606,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (activeTab) {
       updateNavbarState(activeTab);
     }
+    updateActivePageContext();
   });
 
   window.naviddan.onNavStateChanged((state) => {
@@ -625,13 +627,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  window.naviddan.onAdblockUpdated((data) => {
+  window.naviddan.onAdblockUpdated?.((data) => {
     if (adblockCounter) {
       adblockCounter.textContent = data.totalBlocked || 0;
     }
   });
 
-  window.naviddan.onFoundInPage((result) => {
+  window.naviddan.onFoundInPage?.((result) => {
     if (findCount && result) {
       findCount.textContent = `${result.activeMatchOrdinal || 0}/${result.matches || 0}`;
     }
@@ -847,4 +849,525 @@ document.addEventListener('DOMContentLoaded', async () => {
       bookmarksBarEl.appendChild(a);
     });
   }
+
+  // ==========================================
+  // NAVIAI ASSISTANT CONTROLLER
+  // ==========================================
+  const btnNaviAI = document.getElementById('btn-naviai');
+  const sidebarBtnAI = document.getElementById('sidebar-btn-ai');
+  const naviaiPanel = document.getElementById('naviai-panel');
+  const naviaiResizer = document.getElementById('naviai-resizer');
+  const naviaiModelBadge = document.getElementById('naviai-model-badge');
+  const naviaiBtnSettings = document.getElementById('naviai-btn-settings');
+  const naviaiBtnClear = document.getElementById('naviai-btn-clear');
+  const naviaiBtnClose = document.getElementById('naviai-btn-close');
+
+  const naviaiChipSummary = document.getElementById('naviai-chip-summary');
+  const naviaiChipTranslate = document.getElementById('naviai-chip-translate');
+  const naviaiChipKeypoints = document.getElementById('naviai-chip-keypoints');
+  const naviaiChipExplain = document.getElementById('naviai-chip-explain');
+
+  // Mode Switcher Tabs
+  const naviaiTabAssist = document.getElementById('naviai-tab-assist');
+  const naviaiTabDuck = document.getElementById('naviai-tab-duck');
+  const naviaiViewAssist = document.getElementById('naviai-view-assist');
+  const naviaiViewDuck = document.getElementById('naviai-view-duck');
+  const naviaiDuckFrame = document.getElementById('naviai-duck-frame');
+
+  // Free Key Direct Links
+  const naviaiLinkGemini = document.getElementById('naviai-link-gemini');
+  const naviaiLinkGroq = document.getElementById('naviai-link-groq');
+
+  const naviaiSettingsDrawer = document.getElementById('naviai-settings-drawer');
+  const naviaiSettingsCloseBtn = document.getElementById('naviai-settings-close-btn');
+  const naviaiProviderSelect = document.getElementById('naviai-provider-select');
+  const naviaiKeyGemini = document.getElementById('naviai-key-gemini');
+  const naviaiKeyGroq = document.getElementById('naviai-key-groq');
+  const naviaiKeyOpenai = document.getElementById('naviai-key-openai');
+  const naviaiGroupGemini = document.getElementById('naviai-group-gemini');
+  const naviaiGroupGroq = document.getElementById('naviai-group-groq');
+  const naviaiGroupOpenai = document.getElementById('naviai-group-openai');
+  const naviaiGroupOllama = document.getElementById('naviai-group-ollama');
+  const naviaiOllamaUrl = document.getElementById('naviai-ollama-url');
+  const naviaiBtnScanOllama = document.getElementById('naviai-btn-scan-ollama');
+  const naviaiOllamaModelSelect = document.getElementById('naviai-ollama-model-select');
+  const naviaiCustomModel = document.getElementById('naviai-custom-model');
+  const naviaiBtnSaveSettings = document.getElementById('naviai-btn-save-settings');
+
+  const naviaiMessages = document.getElementById('naviai-messages');
+  const naviaiContextPill = document.getElementById('naviai-context-pill');
+  const naviaiContextTitle = document.getElementById('naviai-context-title');
+  const naviaiBtnToggleContext = document.getElementById('naviai-btn-toggle-context');
+  const naviaiInput = document.getElementById('naviai-input');
+  const naviaiBtnSend = document.getElementById('naviai-btn-send');
+  const naviaiBtnStop = document.getElementById('naviai-btn-stop');
+
+  let isNaviAIOpen = false;
+  let isContextActive = true;
+  let isNaviAIStreaming = false;
+  let naviaiHistory = [];
+  let currentAssistantMsgEl = null;
+  let currentAssistantText = '';
+
+  // Load initial settings
+  async function loadNaviAISettings() {
+    try {
+      const conf = await window.naviddan.getNaviAISettings();
+      if (!conf) return;
+
+      if (conf.panelWidth) {
+        document.documentElement.style.setProperty('--naviai-panel-width', `${conf.panelWidth}px`);
+      }
+
+      naviaiProviderSelect.value = conf.provider || 'gemini';
+      updateProviderKeyVisibility(conf.provider || 'gemini');
+
+      if (conf.apiKeys) {
+        naviaiKeyGemini.value = conf.apiKeys.gemini || '';
+        naviaiKeyGroq.value = conf.apiKeys.groq || '';
+        naviaiKeyOpenai.value = conf.apiKeys.openai || '';
+      }
+
+      naviaiOllamaUrl.value = conf.ollamaUrl || 'http://127.0.0.1:11434';
+      naviaiCustomModel.value = conf.model || 'gemini-1.5-flash';
+      updateModelBadge(conf.provider, conf.model);
+    } catch (err) {
+      console.warn('Erreur chargement réglages NaviAI:', err);
+    }
+  }
+
+  function updateModelBadge(provider, model) {
+    if (!naviaiModelBadge) return;
+    const provName = provider === 'gemini' ? 'Gemini' : provider === 'groq' ? 'Groq' : provider === 'ollama' ? 'Ollama' : 'OpenAI';
+    naviaiModelBadge.textContent = `${provName} • ${model || 'default'}`;
+  }
+
+  function updateProviderKeyVisibility(provider) {
+    naviaiGroupGemini.classList.toggle('hidden', provider !== 'gemini');
+    naviaiGroupGroq.classList.toggle('hidden', provider !== 'groq');
+    naviaiGroupOpenai.classList.toggle('hidden', provider !== 'openai');
+    naviaiGroupOllama.classList.toggle('hidden', provider !== 'ollama');
+
+    if (provider === 'gemini' && (!naviaiCustomModel.value || naviaiCustomModel.value.includes('llama') || naviaiCustomModel.value.includes('gpt'))) {
+      naviaiCustomModel.value = 'gemini-1.5-flash';
+    } else if (provider === 'groq' && (!naviaiCustomModel.value || naviaiCustomModel.value.includes('gemini') || naviaiCustomModel.value.includes('gpt'))) {
+      naviaiCustomModel.value = 'llama-3.3-70b-versatile';
+    } else if (provider === 'openai' && (!naviaiCustomModel.value || naviaiCustomModel.value.includes('gemini') || naviaiCustomModel.value.includes('llama'))) {
+      naviaiCustomModel.value = 'gpt-4o-mini';
+    }
+  }
+
+  // Toggle Eye on passwords
+  document.querySelectorAll('.naviai-key-eye').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-target');
+      const input = document.getElementById(targetId);
+      if (input) {
+        input.type = input.type === 'password' ? 'text' : 'password';
+      }
+    });
+  });
+
+  naviaiProviderSelect.addEventListener('change', () => {
+    updateProviderKeyVisibility(naviaiProviderSelect.value);
+  });
+
+  naviaiBtnScanOllama.addEventListener('click', async () => {
+    naviaiBtnScanOllama.textContent = '⏳';
+    const models = await window.naviddan.getOllamaModels(naviaiOllamaUrl.value);
+    naviaiBtnScanOllama.textContent = '🔄';
+    naviaiOllamaModelSelect.innerHTML = '';
+    if (models.length === 0) {
+      const opt = document.createElement('option');
+      opt.textContent = 'Aucun modèle détecté (lance ollama pull)';
+      naviaiOllamaModelSelect.appendChild(opt);
+    } else {
+      models.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m;
+        naviaiOllamaModelSelect.appendChild(opt);
+      });
+      naviaiCustomModel.value = models[0];
+    }
+  });
+
+  naviaiOllamaModelSelect.addEventListener('change', () => {
+    if (naviaiOllamaModelSelect.value) {
+      naviaiCustomModel.value = naviaiOllamaModelSelect.value;
+    }
+  });
+
+  naviaiBtnSaveSettings.addEventListener('click', async () => {
+    const updated = {
+      provider: naviaiProviderSelect.value,
+      model: naviaiCustomModel.value.trim(),
+      apiKeys: {
+        gemini: naviaiKeyGemini.value.trim(),
+        groq: naviaiKeyGroq.value.trim(),
+        openai: naviaiKeyOpenai.value.trim()
+      },
+      ollamaUrl: naviaiOllamaUrl.value.trim()
+    };
+    await window.naviddan.saveNaviAISettings(updated);
+    updateModelBadge(updated.provider, updated.model);
+    naviaiSettingsDrawer.classList.add('hidden');
+  });
+
+  naviaiBtnSettings.addEventListener('click', () => {
+    naviaiSettingsDrawer.classList.toggle('hidden');
+  });
+
+  naviaiSettingsCloseBtn.addEventListener('click', () => {
+    naviaiSettingsDrawer.classList.add('hidden');
+  });
+
+  // Toggle NaviAI Sidebar
+  async function setNaviAIOpen(open) {
+    isNaviAIOpen = open;
+    naviaiPanel.classList.toggle('hidden', !open);
+    if (btnNaviAI) btnNaviAI.classList.toggle('active', open);
+    if (sidebarBtnAI) sidebarBtnAI.classList.toggle('active', open);
+    await window.naviddan.toggleNaviAI(open);
+    if (open) {
+      updateActivePageContext();
+      naviaiInput.focus();
+    }
+  }
+
+  if (btnNaviAI) {
+    btnNaviAI.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setNaviAIOpen(!isNaviAIOpen);
+    });
+  }
+  if (sidebarBtnAI) {
+    sidebarBtnAI.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setNaviAIOpen(!isNaviAIOpen);
+    });
+  }
+  if (naviaiBtnClose) {
+    naviaiBtnClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setNaviAIOpen(false);
+    });
+  }
+
+  window.naviddan.onNaviAISidebarChanged((state) => {
+    isNaviAIOpen = state.isOpen;
+    naviaiPanel.classList.toggle('hidden', !isNaviAIOpen);
+    if (btnNaviAI) btnNaviAI.classList.toggle('active', isNaviAIOpen);
+    if (sidebarBtnAI) sidebarBtnAI.classList.toggle('active', isNaviAIOpen);
+    if (state.width) {
+      document.documentElement.style.setProperty('--naviai-panel-width', `${state.width}px`);
+    }
+  });
+
+  // Resizer Dragging
+  let isResizing = false;
+  naviaiResizer.addEventListener('mousedown', () => {
+    isResizing = true;
+    naviaiResizer.classList.add('dragging');
+    document.body.style.cursor = 'ew-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isResizing) return;
+    const newWidth = Math.max(280, Math.min(700, window.innerWidth - e.clientX));
+    document.documentElement.style.setProperty('--naviai-panel-width', `${newWidth}px`);
+  });
+
+  window.addEventListener('mouseup', async () => {
+    if (!isResizing) return;
+    isResizing = false;
+    naviaiResizer.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    const computedWidth = parseInt(getComputedStyle(naviaiPanel).width, 10);
+    if (computedWidth) {
+      await window.naviddan.saveNaviAISettings({ panelWidth: computedWidth });
+    }
+  });
+
+  // Context Pill
+  function updateActivePageContext() {
+    const activeTab = currentTabs.find(t => t.id === activeTabId);
+    if (activeTab && naviaiContextTitle) {
+      naviaiContextTitle.textContent = activeTab.title || activeTab.url || 'Nouvel onglet';
+    }
+  }
+
+  naviaiBtnToggleContext.addEventListener('click', () => {
+    isContextActive = !isContextActive;
+    naviaiContextPill.classList.toggle('disabled', !isContextActive);
+    naviaiBtnToggleContext.textContent = isContextActive ? '✓' : '✕';
+    naviaiBtnToggleContext.title = isContextActive ? 'Désactiver le contexte' : 'Activer le contexte';
+  });
+
+  // Clear Chat
+  naviaiBtnClear.addEventListener('click', () => {
+    naviaiHistory = [];
+    naviaiMessages.innerHTML = `
+      <div class="naviai-welcome">
+        <div class="welcome-icon">⚡</div>
+        <h3>NaviAI Assistant</h3>
+        <p>Pose une question, résume l'onglet actif ou sélectionne un texte sur n'importe quel site web.</p>
+      </div>
+    `;
+  });
+
+  // Markdown rendering helper
+  function renderMarkdown(text) {
+    if (!text) return '';
+    let escaped = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    // Code blocks with copy button
+    escaped = escaped.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+      return `<pre><button class="code-copy-btn" onclick="navigator.clipboard.writeText(this.nextElementSibling.innerText);this.textContent='Copié !';setTimeout(()=>this.textContent='Copier',1500)">Copier</button><code>${code.trim()}</code></pre>`;
+    });
+
+    // Inline code
+    escaped = escaped.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // Bold
+    escaped = escaped.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+    // Italic
+    escaped = escaped.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+    // Line breaks
+    escaped = escaped.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+
+    return escaped;
+  }
+
+  // Send Prompt to NaviAI
+  async function submitNaviAIPrompt(promptText, extraContext = null) {
+    const text = (promptText || naviaiInput.value).trim();
+    if (!text || isNaviAIStreaming) return;
+
+    naviaiInput.value = '';
+    naviaiInput.style.height = 'auto';
+
+    // Remove welcome screen if present
+    const welcome = naviaiMessages.querySelector('.naviai-welcome');
+    if (welcome) welcome.remove();
+
+    // Append User Message
+    const userMsgEl = document.createElement('div');
+    userMsgEl.className = 'naviai-msg user';
+    userMsgEl.textContent = text;
+    naviaiMessages.appendChild(userMsgEl);
+
+    // Retrieve active page content if context enabled
+    let pageData = null;
+    if (isContextActive) {
+      pageData = await window.naviddan.getActivePageContent();
+    }
+
+    // Append Assistant Placeholder
+    currentAssistantMsgEl = document.createElement('div');
+    currentAssistantMsgEl.className = 'naviai-msg assistant';
+    currentAssistantMsgEl.innerHTML = '<span class="streaming-cursor"></span>';
+    naviaiMessages.appendChild(currentAssistantMsgEl);
+    naviaiMessages.scrollTop = naviaiMessages.scrollHeight;
+
+    currentAssistantText = '';
+    isNaviAIStreaming = true;
+    naviaiBtnSend.classList.add('hidden');
+    naviaiBtnStop.classList.remove('hidden');
+
+    const payload = {
+      prompt: text,
+      history: naviaiHistory.slice(-8), // Keep last 8 turns for memory
+      pageContext: extraContext || (pageData ? pageData.content : null),
+      pageTitle: pageData ? pageData.title : null,
+      pageUrl: pageData ? pageData.url : null
+    };
+
+    naviaiHistory.push({ role: 'user', content: text });
+    window.naviddan.sendNaviAIPrompt(payload);
+  }
+
+  // Stop Stream
+  naviaiBtnStop.addEventListener('click', () => {
+    window.naviddan.stopNaviAIStream();
+    finishStreaming();
+  });
+
+  function finishStreaming() {
+    isNaviAIStreaming = false;
+    naviaiBtnStop.classList.add('hidden');
+    naviaiBtnSend.classList.remove('hidden');
+    if (currentAssistantMsgEl) {
+      const cursor = currentAssistantMsgEl.querySelector('.streaming-cursor');
+      if (cursor) cursor.remove();
+      currentAssistantMsgEl.innerHTML = renderMarkdown(currentAssistantText);
+    }
+    if (currentAssistantText.trim()) {
+      naviaiHistory.push({ role: 'assistant', content: currentAssistantText });
+    }
+    naviaiMessages.scrollTop = naviaiMessages.scrollHeight;
+  }
+
+  // Stream Event Listeners
+  window.naviddan.onNaviAIChunk((chunk) => {
+    if (!currentAssistantMsgEl) return;
+    currentAssistantText += chunk;
+    currentAssistantMsgEl.innerHTML = renderMarkdown(currentAssistantText) + '<span class="streaming-cursor"></span>';
+    naviaiMessages.scrollTop = naviaiMessages.scrollHeight;
+  });
+
+  window.naviddan.onNaviAIDone(() => {
+    finishStreaming();
+  });
+
+  // Mode Switcher (Assistant vs Duck.ai)
+  function switchNaviAIMode(mode) {
+    const isDuck = mode === 'duck';
+    naviaiTabAssist?.classList.toggle('active', !isDuck);
+    naviaiTabDuck?.classList.toggle('active', isDuck);
+    naviaiViewAssist?.classList.toggle('hidden', isDuck);
+    naviaiViewDuck?.classList.toggle('hidden', !isDuck);
+
+    if (isDuck && naviaiDuckFrame && (!naviaiDuckFrame.src || naviaiDuckFrame.src === 'about:blank')) {
+      naviaiDuckFrame.src = 'https://duck.ai/';
+    }
+  }
+
+  naviaiTabAssist?.addEventListener('click', () => switchNaviAIMode('assist'));
+  naviaiTabDuck?.addEventListener('click', () => switchNaviAIMode('duck'));
+
+  // Free Key Direct Links
+  naviaiLinkGemini?.addEventListener('click', () => {
+    window.naviddan.createTab('https://aistudio.google.com/app/apikey');
+  });
+
+  naviaiLinkGroq?.addEventListener('click', () => {
+    window.naviddan.createTab('https://console.groq.com/keys');
+  });
+
+  // Local Smart Extractive Summary (100% Free & Offline fallback)
+  function generateLocalSmartSummary(pageData) {
+    if (!pageData || !pageData.content) {
+      return "<p>Aucun contenu textuel détecté sur cet onglet.</p>";
+    }
+
+    const sentences = pageData.content
+      .split(/(?<=[.?!])\s+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 25 && s.length < 220);
+
+    const wordCount = pageData.content.split(/\s+/).length;
+    const readMinutes = Math.max(1, Math.round(wordCount / 200));
+    const topSentences = sentences.slice(0, 5);
+
+    let html = `
+      <div style="border-left: 3px solid #10b981; padding-left: 8px; margin-bottom: 8px;">
+        <strong style="color:#6ee7b7;">⚡ Synthèse Express Locale (100% Gratuite / Sans Clé)</strong><br>
+        <span style="font-size:10.5px;color:var(--text-muted);">📄 ~${wordCount} mots • ⏱️ ${readMinutes} min de lecture estimée</span>
+      </div>
+      <ul style="margin: 6px 0; padding-left: 18px; line-height: 1.5; font-size: 12px;">
+    `;
+
+    if (topSentences.length > 0) {
+      topSentences.forEach(s => {
+        html += `<li>${s}</li>`;
+      });
+    } else {
+      html += `<li>${pageData.content.substring(0, 300)}...</li>`;
+    }
+    html += `</ul>`;
+    return html;
+  }
+
+  window.naviddan.onNaviAIError((err) => {
+    if (currentAssistantMsgEl) {
+      if (err && (err.includes('Clé API') || err.includes('manquante'))) {
+        window.naviddan.getActivePageContent().then(pageData => {
+          let localSummary = '';
+          if (pageData && pageData.content && pageData.content.length > 100) {
+            localSummary = generateLocalSmartSummary(pageData);
+          }
+
+          currentAssistantMsgEl.innerHTML = `
+            ${localSummary}
+            <div class="naviai-free-card">
+              <h4>🎁 Activer l'IA Complète Gratuitement (0€ / Sans Carte)</h4>
+              <p>NaviAI te propose 3 options 100% gratuites selon tes préférences :</p>
+              <div class="free-actions-col">
+                <button class="free-act-btn primary" id="btn-switch-duckai-now">
+                  <span>🌐 <strong>Duck.ai Chat</strong> (GPT-4o mini / Claude sans clé)</span>
+                  <span>Ouvrir ➔</span>
+                </button>
+                <button class="free-act-btn" id="btn-get-gemini-now">
+                  <span>🔑 <strong>Clé Google Gemini</strong> (1 500 req/jour gratuites)</span>
+                  <span>Obtenir ↗</span>
+                </button>
+                <button class="free-act-btn" id="btn-get-groq-now">
+                  <span>⚡ <strong>Clé Groq</strong> (14 400 req/jour ultra-rapides)</span>
+                  <span>Obtenir ↗</span>
+                </button>
+              </div>
+            </div>
+          `;
+
+          document.getElementById('btn-switch-duckai-now')?.addEventListener('click', () => switchNaviAIMode('duck'));
+          document.getElementById('btn-get-gemini-now')?.addEventListener('click', () => window.naviddan.createTab('https://aistudio.google.com/app/apikey'));
+          document.getElementById('btn-get-groq-now')?.addEventListener('click', () => window.naviddan.createTab('https://console.groq.com/keys'));
+          naviaiMessages.scrollTop = naviaiMessages.scrollHeight;
+        });
+      } else {
+        currentAssistantMsgEl.innerHTML = `<span style="color:#ef4444;font-weight:600;">⚠️ ${err}</span>`;
+      }
+    }
+    finishStreaming();
+  });
+
+  // In-page selection trigger handler
+  window.naviddan.onNaviAITrigger((data) => {
+    setNaviAIOpen(true);
+    if (data.prompt) {
+      submitNaviAIPrompt(data.prompt, data.selectedText ? `[Extrait sélectionné]\n${data.selectedText}` : null);
+    }
+  });
+
+  // Quick Action Chips
+  naviaiChipSummary.addEventListener('click', () => {
+    submitNaviAIPrompt("Résume le contenu essentiel de cette page en 4 à 5 points clés percutants et clairs :");
+  });
+
+  naviaiChipTranslate.addEventListener('click', () => {
+    submitNaviAIPrompt("Traduis fidèlement le contenu principal de cette page en français fluide et élégant :");
+  });
+
+  naviaiChipKeypoints.addEventListener('click', () => {
+    submitNaviAIPrompt("Extrais les points clés majeurs, les dates/faits importants et la synthèse opérationnelle de cette page :");
+  });
+
+  naviaiChipExplain.addEventListener('click', () => {
+    submitNaviAIPrompt("Explique simplement les concepts et sujets abordés sur cette page, de manière pédagogique et accessible :");
+  });
+
+  // Input listeners
+  naviaiBtnSend.addEventListener('click', () => submitNaviAIPrompt());
+
+  naviaiInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      submitNaviAIPrompt();
+    }
+  });
+
+  naviaiInput.addEventListener('input', () => {
+    naviaiInput.style.height = 'auto';
+    naviaiInput.style.height = `${Math.min(120, naviaiInput.scrollHeight)}px`;
+  });
+
+  loadNaviAISettings();
 });

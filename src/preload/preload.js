@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld('naviddan', {
   zoomIn: () => ipcRenderer.send('page:zoom-in'),
   zoomOut: () => ipcRenderer.send('page:zoom-out'),
   zoomReset: () => ipcRenderer.send('page:zoom-reset'),
+  resetZoom: () => ipcRenderer.send('page:zoom-reset'),
   printPage: () => ipcRenderer.send('page:print'),
   findInPage: (text, forward) => ipcRenderer.send('page:find', { text, forward }),
   stopFindInPage: () => ipcRenderer.send('page:stop-find'),
@@ -100,6 +101,20 @@ contextBridge.exposeInMainWorld('naviddan', {
   toggleAdblock: (enabled) => ipcRenderer.invoke('adblock:toggle', enabled),
   openShieldMenu: (coords) => ipcRenderer.send('shield:toggle-popup', coords),
 
+  // --- NaviAI Assistant ---
+  toggleNaviAI: (open) => ipcRenderer.invoke('naviai:toggle-sidebar', open),
+  getNaviAISettings: () => ipcRenderer.invoke('naviai:get-settings'),
+  saveNaviAISettings: (settings) => ipcRenderer.invoke('naviai:save-settings', settings),
+  getOllamaModels: (customUrl) => ipcRenderer.invoke('naviai:get-ollama-models', customUrl),
+  getActivePageContent: () => ipcRenderer.invoke('naviai:get-page-content'),
+  sendNaviAIPrompt: (payload) => ipcRenderer.send('naviai:send-prompt', payload),
+  stopNaviAIStream: () => ipcRenderer.send('naviai:stop-stream'),
+  onNaviAIChunk: (cb) => ipcRenderer.on('naviai:stream-chunk', (_, chunk) => cb(chunk)),
+  onNaviAIDone: (cb) => ipcRenderer.on('naviai:stream-done', () => cb()),
+  onNaviAIError: (cb) => ipcRenderer.on('naviai:stream-error', (_, err) => cb(err)),
+  onNaviAITrigger: (cb) => ipcRenderer.on('naviai:trigger-prompt', (_, data) => cb(data)),
+  onNaviAISidebarChanged: (cb) => ipcRenderer.on('naviai:sidebar-changed', (_, state) => cb(state)),
+
   // --- Events from Main ---
   onSettingsUpdated: (cb) => ipcRenderer.on('settings:updated', (_, s) => cb(s)),
   onTabCreated: (cb) => ipcRenderer.on('tab:created', (_, tab) => cb(tab)),
@@ -108,10 +123,12 @@ contextBridge.exposeInMainWorld('naviddan', {
   onTabActivated: (cb) => ipcRenderer.on('tab:activated', (_, tabId) => cb(tabId)),
   onNavStateChanged: (cb) => ipcRenderer.on('nav:state', (_, state) => cb(state)),
   onAdBlocked: (cb) => ipcRenderer.on('adblock:blocked', (_, data) => cb(data)),
+  onAdblockUpdated: (cb) => ipcRenderer.on('adblock:blocked', (_, data) => cb(data)),
   onDownloadStarted: (cb) => ipcRenderer.on('download:started', (_, item) => cb(item)),
   onDownloadUpdated: (cb) => ipcRenderer.on('download:updated', (_, item) => cb(item)),
   onDownloadDone: (cb) => ipcRenderer.on('download:done', (_, item) => cb(item)),
   onFindResult: (cb) => ipcRenderer.on('page:find-result', (_, result) => cb(result)),
+  onFoundInPage: (cb) => ipcRenderer.on('page:find-result', (_, result) => cb(result)),
   onOpenSettings: (cb) => ipcRenderer.on('open:settings', () => cb())
 });
 

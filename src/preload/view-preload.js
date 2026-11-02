@@ -869,3 +869,171 @@ ipcRenderer.on('snipper:open-overlay', () => {
 
   (document.body || document.documentElement).appendChild(overlay);
 });
+
+// ==========================================
+// NAVIAI SELECTION FLOATING TOOLTIP
+// ==========================================
+(function initNaviAITooltip() {
+  let tooltipEl = null;
+
+  function removeTooltip() {
+    if (tooltipEl) {
+      tooltipEl.remove();
+      tooltipEl = null;
+    }
+  }
+
+  document.addEventListener('mouseup', (e) => {
+    // If click inside tooltip, do not dismiss immediately
+    if (tooltipEl && tooltipEl.contains(e.target)) return;
+
+    // Small delay to let selection settle
+    setTimeout(() => {
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed) {
+        removeTooltip();
+        return;
+      }
+
+      const text = selection.toString().trim();
+      if (!text || text.length < 3 || text.length > 8000) {
+        removeTooltip();
+        return;
+      }
+
+      try {
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        if (rect.width === 0 && rect.height === 0) {
+          removeTooltip();
+          return;
+        }
+
+        removeTooltip();
+
+        tooltipEl = document.createElement('div');
+        tooltipEl.id = 'naviddan-ai-selection-bubble';
+        Object.assign(tooltipEl.style, {
+          position: 'fixed',
+          left: `${Math.max(10, Math.min(window.innerWidth - 320, rect.left + (rect.width / 2) - 150))}px`,
+          top: `${rect.top > 46 ? rect.top - 44 : rect.bottom + 8}px`,
+          zIndex: '2147483645',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '5px',
+          padding: '4px 8px',
+          background: 'rgba(13, 17, 26, 0.94)',
+          border: '1px solid rgba(59, 130, 246, 0.6)',
+          borderRadius: '8px',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.7), 0 0 14px rgba(59, 130, 246, 0.35)',
+          backdropFilter: 'blur(10px)',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontSize: '11px',
+          fontWeight: '600',
+          color: '#e6edf3',
+          userSelect: 'none',
+          animation: 'naviaiBubbleFadeIn 0.15s ease-out'
+        });
+
+        const brand = document.createElement('span');
+        brand.textContent = '⚡ NaviAI';
+        Object.assign(brand.style, {
+          color: '#60a5fa',
+          fontWeight: '700',
+          marginRight: '4px',
+          display: 'flex',
+          alignItems: 'center'
+        });
+        tooltipEl.appendChild(brand);
+
+        const actions = [
+          {
+            label: '💡 Résumer',
+            prompt: `Résume ce passage de manière claire, concise et percutante :\n\n"${text}"`
+          },
+          {
+            label: '🌐 Traduire',
+            prompt: `Traduis ce texte fidèlement en français (ou explique-le si déjà en français) :\n\n"${text}"`
+          },
+          {
+            label: '❓ Expliquer',
+            prompt: `Explique simplement et pédagogiquement ce texte et son contexte :\n\n"${text}"`
+          }
+        ];
+
+        actions.forEach(act => {
+          const btn = document.createElement('button');
+          btn.textContent = act.label;
+          Object.assign(btn.style, {
+            background: 'rgba(255, 255, 255, 0.08)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            color: '#f1f5f9',
+            padding: '3px 7px',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            fontSize: '11px',
+            fontWeight: '500',
+            transition: 'all 0.15s ease',
+            outline: 'none'
+          });
+
+          btn.addEventListener('mouseenter', () => {
+            btn.style.background = 'rgba(59, 130, 246, 0.35)';
+            btn.style.borderColor = '#60a5fa';
+            btn.style.color = '#ffffff';
+          });
+          btn.addEventListener('mouseleave', () => {
+            btn.style.background = 'rgba(255, 255, 255, 0.08)';
+            btn.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+            btn.style.color = '#f1f5f9';
+          });
+
+          btn.addEventListener('mousedown', (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            ipcRenderer.send('naviai:open-with-selection', {
+              prompt: act.prompt,
+              selectedText: text,
+              pageUrl: window.location.href,
+              pageTitle: document.title
+            });
+            removeTooltip();
+          });
+
+          tooltipEl.appendChild(btn);
+        });
+
+        // Close button
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '✕';
+        Object.assign(closeBtn.style, {
+          background: 'none',
+          border: 'none',
+          color: 'rgba(255, 255, 255, 0.45)',
+          cursor: 'pointer',
+          padding: '2px 4px',
+          fontSize: '10px',
+          marginLeft: '2px'
+        });
+        closeBtn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          removeTooltip();
+        });
+        tooltipEl.appendChild(closeBtn);
+
+        (document.body || document.documentElement).appendChild(tooltipEl);
+      } catch (err) {
+        removeTooltip();
+      }
+    }, 20);
+  });
+
+  document.addEventListener('mousedown', (e) => {
+    if (tooltipEl && !tooltipEl.contains(e.target)) {
+      removeTooltip();
+    }
+  });
+
+  window.addEventListener('scroll', removeTooltip, { passive: true });
+})();
+

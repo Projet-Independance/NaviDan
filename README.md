@@ -5,9 +5,17 @@ Un navigateur web de bureau moderne, ultra-rapide et personnalisable, propulsé 
 
 ---
 
-## ⚡ Les 5 Gestionnaires Intégrés
+## ⚡ Les 5 Gestionnaires Intégrés & Modules Avancés
 
-1. 🔑 **Gestionnaire de Mots de Passe (Coffre-fort)** :
+1. 🤖 **NaviAI (Assistant Intelligent Intégré)** :
+   * **Volet latéral ancré rétractable (Split-view)** : la page web se redimensionne en direct sans être masquée.
+   * **Onglet IA 100% Gratuite (Duck.ai Chat)** : Discutez instantanément avec **GPT-4o mini, Claude 3 Haiku, Llama 3.3 ou Mixtral** sans aucune clé d'API, sans compte et sans carte bancaire !
+   * **Multi-moteurs hybride** : Support de **Google Gemini** (1.5 Flash / 2.0 - gratuit 1 500 req/jour), **Groq** (Llama 3.3 à 500+ tok/s - gratuit 14 400 req/jour), **OpenAI** (GPT-4o mini) et **Ollama local** (100% privé, sans internet).
+   * **Actions instantanées en 1 clic** : *Résumer la page*, *Traduire en français*, *Points clés & FAQ*, *Expliquer simplement*.
+   * **Bulle contextuelle en page** : Sélectionner un passage sur n'importe quel site fait apparaître le badge rapide `⚡ NaviAI` (Résumer, Traduire, Expliquer).
+   * **Streaming temps réel** avec rendu Markdown soigné et bouton de copie de code.
+
+2. 🔑 **Gestionnaire de Mots de Passe (Coffre-fort)** :
    * Enregistrement local sécurisé de vos comptes (site, identifiant, mot de passe).
    * Révélation/masquage instantané avec l'icône œil `👁️` et copie rapide au presse-papier `📋`.
    * **Générateur de mots de passe forts** intégré (aléatoire, majuscules, minuscules, symboles, chiffres).
@@ -63,6 +71,7 @@ Un navigateur web de bureau moderne, ultra-rapide et personnalisable, propulsé 
 | `Ctrl + D` | Ajouter aux favoris |
 | `Ctrl + F` | Rechercher dans la page |
 | `Ctrl + \` / `Ctrl + B` | Afficher / Masquer la barre latérale |
+| `Ctrl + Shift + A` | Afficher / Masquer le volet **NaviAI** (Assistant IA) |
 | `Alt + P` | Détacher la vidéo en Picture-in-Picture (PiP Gaming) |
 | `F12` | Ouvrir les Outils de Développement |
 
