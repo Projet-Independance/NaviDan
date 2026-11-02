@@ -8,29 +8,36 @@
     "build:linux": "npx electron-builder --linux AppImage deb",
     "build:win": "npx electron-builder --win portable nsis"
   },
+  "dependencies": {
+    "adm-zip": "^0.5.16"
+  },
   "build": {
     "appId": "com.navidan.browser",
     "productName": "NaviDan",
+    "directories": {
+      "output": "dist"
+    },
     "linux": {
       "target": [
         "AppImage",
         "deb"
       ],
       "category": "Network",
-      "icon": "assets/icon.svg"
+      "icon": "assets/icon.png"
     },
     "win": {
       "target": [
         "portable",
         "nsis"
       ],
-      "icon": "assets/icon.svg"
+      "icon": "assets/icon.ico"
     },
     "files": [
       "src/**/*",
       "assets/**/*",
       "start.js",
-      "package.json"
+      "package.json",
+      "node_modules/**/*"
     ]
   },
   "keywords": [
@@ -40,9 +47,12 @@
     "chromium",
     "linux"
   ],
-  "author": "NaviDan",
+  "author": {
+    "name": "NaviDan",
+    "email": "contact@navidan.browser"
+  },
   "license": "MIT",
   "devDependencies": {
-    "electron": "^24.22.1"
+    "electron": "45.2.1"
   }
 }
