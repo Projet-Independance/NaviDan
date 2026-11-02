@@ -1,5 +1,5 @@
 {
-  "name": "naviddan",
+  "name": "navidan",
   "version": "1.0.0",
   "description": "Navigateur Web moderne, rapide et sécurisé développé sur mesure",
   "main": "src/main/main.js",
@@ -9,8 +9,8 @@
     "build:win": "npx electron-builder --win portable nsis"
   },
   "build": {
-    "appId": "com.naviddan.browser",
-    "productName": "NaviDdan",
+    "appId": "com.navidan.browser",
+    "productName": "NaviDan",
     "linux": {
       "target": [
         "AppImage",
@@ -40,7 +40,7 @@
     "chromium",
     "linux"
   ],
-  "author": "NaviDdan",
+  "author": "NaviDan",
   "license": "MIT",
   "devDependencies": {
     "electron": "^24.22.1"

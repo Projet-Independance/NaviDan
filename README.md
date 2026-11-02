@@ -1,4 +1,4 @@
-# NaviDdan 🌐
+# NaviDan 🧭
 
 Un navigateur web de bureau moderne, ultra-rapide et personnalisable, propulsé par Chromium et Electron.
 **Compatible à 100 % avec Windows et Linux (Ubuntu, Debian, Fedora, Arch Linux, etc.).**

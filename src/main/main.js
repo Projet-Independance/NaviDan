@@ -939,6 +939,7 @@ function createWindow() {
   const iconPath = path.join(__dirname, '../../assets/icon.svg');
 
   mainWindow = new BrowserWindow({
+    title: 'NaviDan',
     width: 1280,
     height: 820,
     minWidth: 800,
@@ -1971,10 +1972,8 @@ function registerIpcHandlers() {
 
 // App lifecycle
 app.whenReady().then(() => {
-  if (process.platform === 'linux') {
-    app.setName('NaviDdan');
-    app.setAppUserModelId?.('com.naviddan.browser');
-  }
+  app.setName('NaviDan');
+  app.setAppUserModelId?.('com.navidan.browser');
   store = new Store();
   currentActiveWorkspaceId = store.getActiveWorkspaceId() || 'gaming';
   naviAIService = new NaviAIService(store);

@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('naviddan', {
+const naviDanApi = {
   // --- Window Controls ---
   minimize: () => ipcRenderer.send('window:minimize'),
   maximize: () => ipcRenderer.send('window:maximize'),
@@ -146,5 +146,8 @@ contextBridge.exposeInMainWorld('naviddan', {
   onFindResult: (cb) => ipcRenderer.on('page:find-result', (_, result) => cb(result)),
   onFoundInPage: (cb) => ipcRenderer.on('page:find-result', (_, result) => cb(result)),
   onOpenSettings: (cb) => ipcRenderer.on('open:settings', () => cb())
-});
+};
+
+contextBridge.exposeInMainWorld('navidan', naviDanApi);
+contextBridge.exposeInMainWorld('naviddan', naviDanApi);
 
