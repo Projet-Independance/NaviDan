@@ -21,7 +21,8 @@ class Store {
         adblockEnabled: true,
         homePage: 'naviddan://newtab',
         showBookmarksBar: true,
-        sidebarVisible: true
+        sidebarVisible: true,
+        language: 'fr'
       },
       themeSettings: {
         preset: 'cyber-dark', // 'cyber-dark', 'tokyo-night', 'ocean-blue', 'matrix', 'light'
@@ -65,6 +66,7 @@ class Store {
       activeWorkspaceId: 'gaming',
       tabHibernationEnabled: true,
       tabHibernationMinutes: 30,
+      extensions: [],
       history: []
     };
     this.data = this.loadData();
@@ -281,6 +283,17 @@ class Store {
     }
     this.saveData();
     return true;
+  }
+
+  // --- Extensions ---
+  getExtensions() {
+    return this.data.extensions || [];
+  }
+
+  saveExtensions(list) {
+    this.data.extensions = list;
+    this.saveData();
+    return list;
   }
 }
 

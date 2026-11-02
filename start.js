@@ -2,6 +2,8 @@
 const { spawn } = require('child_process');
 const path = require('path');
 
+process.title = 'NaviDan';
+
 // Cross-platform binary resolution (Windows, Linux, macOS)
 let electronPath;
 try {

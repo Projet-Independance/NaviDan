@@ -70,6 +70,10 @@ const naviDanApi = {
   openHistoryMenu: (coords) => ipcRenderer.send('history:toggle-popup', coords),
   openBookmarksMenu: (coords) => ipcRenderer.send('bookmarks:toggle-popup', coords),
   openSettingsMenu: (coords) => ipcRenderer.send('settings:toggle-popup', coords),
+  openExtensionsMenu: (coords) => ipcRenderer.send('extensions:toggle-popup', coords),
+  getExtensions: () => ipcRenderer.invoke('extensions:get'),
+  openExtensionAction: (id, coords) => ipcRenderer.invoke('extensions:open-action', { id, coords }),
+  onExtensionsUpdated: (cb) => ipcRenderer.on('extensions:updated', (_, list) => cb(list)),
 
   // --- Performance, Cleaner, Passwords & Themes ---
   openPerfMenu: (coords) => ipcRenderer.send('perf:toggle-popup', coords),

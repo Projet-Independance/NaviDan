@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extensions Chrome</title>
+  <link rel="stylesheet" href="extensions-popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <div class="arrow-up"></div>
+
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="header-left">
+        <svg class="header-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+          <line x1="12" y1="22.08" x2="12" y2="12"/>
+        </svg>
+        <h2 class="title">EXTENSIONS • CHROME & CRX</h2>
+      </div>
+      <button id="btn-close" class="btn-close-header" title="Fermer">✕</button>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="popup-tabs">
+      <button class="tab-btn active" data-tab="installed" id="tab-btn-installed">
+        Mes extensions <span id="installed-count" class="tab-badge">0</span>
+      </button>
+      <button class="tab-btn" data-tab="catalog" id="tab-btn-catalog">
+        Catalogue 1-Clic <span class="tab-badge-hot">POPULAIRE</span>
+      </button>
+    </div>
+
+    <!-- Tab 1: Installed Extensions -->
+    <div class="tab-content active" id="tab-installed">
+      <!-- Fast Install by Web Store URL/ID -->
+      <div class="install-bar">
+        <input type="text" id="input-webstore" placeholder="Coller URL ou ID Chrome Web Store..." />
+        <button id="btn-install-webstore" class="btn-primary-action">Installer</button>
+      </div>
+
+      <div class="local-install-row">
+        <button id="btn-install-folder" class="btn-secondary-action">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
+          Charger dossier décompressé (Local)
+        </button>
+      </div>
+
+      <div class="popup-scroll-body" id="installed-list">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+
+    <!-- Tab 2: Curated 1-Click Catalog -->
+    <div class="tab-content" id="tab-catalog">
+      <div class="catalog-intro">
+        Extensions populaires compatibles. Installation directe en 1 clic sans compte Google.
+      </div>
+      <div class="catalog-filters" id="catalog-filters">
+        <button class="cat-filter-btn active" data-cat="all">Tous</button>
+        <button class="cat-filter-btn" data-cat="Confidentialité">Sécurité</button>
+        <button class="cat-filter-btn" data-cat="Médias">Médias</button>
+        <button class="cat-filter-btn" data-cat="Productivité">Productivité</button>
+        <button class="cat-filter-btn" data-cat="Dev">Dev</button>
+      </div>
+      <div class="popup-scroll-body" id="catalog-list">
+        <!-- Injected via JS -->
+      </div>
+    </div>
+
+    <!-- Footer Feedback & Status -->
+    <footer class="popup-footer">
+      <span id="status-text" class="status-text">Prêt</span>
+    </footer>
+  </div>
+
+  <script src="../shared/i18n.js"></script>
+  <script src="extensions-popup.js"></script>
+</body>
+</html>
+

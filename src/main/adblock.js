@@ -150,6 +150,13 @@ class AdBlocker {
   shouldBlock(requestUrl, pageUrl) {
     const pageDomain = this.extractDomain(pageUrl);
     const reqDomain = this.extractDomain(requestUrl);
+
+    // Whitelist Duck.ai and DuckDuckGo internal chat & status endpoints
+    if (pageDomain.includes('duck.ai') || pageDomain.includes('duckduckgo.com') ||
+        reqDomain.includes('duck.ai') || reqDomain.includes('duckduckgo.com')) {
+      return null;
+    }
+
     const parsedPath = requestUrl.toLowerCase();
 
     // Check Ads

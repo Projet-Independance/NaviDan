@@ -40,6 +40,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnAudioMute = document.getElementById('btn-audio-mute');
   const btnAudioMenu = document.getElementById('btn-audio-menu');
   const audioStreamsCount = document.getElementById('audio-streams-count');
+  const btnExtensions = document.getElementById('btn-extensions');
+  const extensionsToolbar = document.getElementById('extensions-toolbar');
   const btnAdblock = document.getElementById('btn-adblock');
   const adblockCounter = document.getElementById('adblock-counter');
   const btnDownloads = document.getElementById('btn-downloads');
@@ -54,6 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const sidebarBtnCleaner = document.getElementById('sidebar-btn-cleaner');
   const sidebarBtnPasswords = document.getElementById('sidebar-btn-passwords');
   const sidebarBtnThemes = document.getElementById('sidebar-btn-themes');
+  const sidebarBtnExtensions = document.getElementById('sidebar-btn-extensions');
   const sidebarBtnHistory = document.getElementById('sidebar-btn-history');
   const sidebarBtnBookmarks = document.getElementById('sidebar-btn-bookmarks');
   const sidebarBtnCollapse = document.getElementById('sidebar-btn-collapse');
@@ -81,6 +84,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Apply initial settings
   applyTheme(settings.theme || 'dark');
+  applyLanguage(settings.language || 'fr');
   if (!settings.showBookmarksBar) bookmarksBarEl.classList.add('hidden');
 
   // Load Bookmarks Bar
@@ -201,6 +205,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.naviddan.openThemesMenu(getSidebarAnchorCoords(sidebarBtnThemes));
   });
 
+  sidebarBtnExtensions?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    window.naviddan.openExtensionsMenu(getSidebarAnchorCoords(sidebarBtnExtensions));
+  });
+
   sidebarBtnHistory?.addEventListener('click', (e) => {
     e.stopPropagation();
     window.naviddan.openHistoryMenu(getSidebarAnchorCoords(sidebarBtnHistory));
@@ -295,6 +304,63 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
   }
+
+  // Chrome Extensions Toolbar & Manager
+  async function refreshExtensionsToolbar() {
+    if (!extensionsToolbar || !window.naviddan?.getExtensions) return;
+    try {
+      const list = await window.naviddan.getExtensions();
+      extensionsToolbar.innerHTML = '';
+      if (!list) return;
+
+      list.filter(e => e.enabled).forEach(ext => {
+        const btn = document.createElement('button');
+        btn.className = 'ext-action-btn';
+        btn.title = `${ext.actionTitle || ext.name}${ext.hasActionPopup ? ' (Clic pour ouvrir)' : ''}`;
+
+        if (ext.iconData) {
+          btn.innerHTML = `<img src="${ext.iconData}" alt="${ext.name}" />`;
+        } else {
+          btn.textContent = '🧩';
+        }
+
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const rect = btn.getBoundingClientRect();
+          if (ext.hasActionPopup) {
+            window.naviddan.openExtensionAction(ext.id, {
+              x: Math.round(rect.right),
+              y: Math.round(rect.bottom)
+            });
+          } else {
+            window.naviddan.openExtensionsMenu({
+              x: Math.round(rect.right),
+              y: Math.round(rect.bottom)
+            });
+          }
+        });
+
+        extensionsToolbar.appendChild(btn);
+      });
+    } catch (err) {
+      console.error('Failed refreshing extensions toolbar:', err);
+    }
+  }
+
+  btnExtensions?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const rect = btnExtensions.getBoundingClientRect();
+    window.naviddan.openExtensionsMenu({
+      x: Math.round(rect.right),
+      y: Math.round(rect.bottom)
+    });
+  });
+
+  window.naviddan?.onExtensionsUpdated?.(() => {
+    refreshExtensionsToolbar();
+  });
+
+  refreshExtensionsToolbar();
 
   // Top Toolbar Popovers
   btnAdblock?.addEventListener('click', (e) => {
@@ -503,15 +569,75 @@ document.addEventListener('DOMContentLoaded', async () => {
     openAudioCockpit();
   });
 
-  // Update theme & bookmarks bar when settings change from popup
+  // Update theme & bookmarks bar & language when settings change from popup
   if (window.naviddan.onSettingsUpdated) {
     window.naviddan.onSettingsUpdated((newSettings) => {
+      if (newSettings.language) applyLanguage(newSettings.language);
       if (newSettings.theme) applyTheme(newSettings.theme);
       if ('showBookmarksBar' in newSettings) {
         if (newSettings.showBookmarksBar) bookmarksBarEl.classList.remove('hidden');
         else bookmarksBarEl.classList.add('hidden');
       }
     });
+  }
+
+  function applyLanguage(lang) {
+    if (!window.NaviI18n) return;
+    const l = window.NaviI18n.setLang(lang || 'fr');
+    window.NaviI18n.applyToDOM(document, l);
+
+    const t = window.NaviI18n.t;
+    if (omniboxInput) {
+      omniboxInput.placeholder = t('url_placeholder');
+    }
+    const btnNewTab = document.getElementById('btn-new-tab');
+    if (btnNewTab) btnNewTab.title = t('new_tab') + ' (Ctrl+T)';
+    const btnNewIncognito = document.getElementById('btn-new-incognito');
+    if (btnNewIncognito) btnNewIncognito.title = (l === 'fr' ? 'Nouvel onglet privé' : 'New private tab') + ' (Ctrl+Shift+N)';
+    const btnBack = document.getElementById('btn-back');
+    if (btnBack) btnBack.title = t('btn_back') + ' (Alt+Left)';
+    const btnForward = document.getElementById('btn-forward');
+    if (btnForward) btnForward.title = t('btn_forward') + ' (Alt+Right)';
+    const btnReload = document.getElementById('btn-reload');
+    if (btnReload) btnReload.title = t('btn_reload') + ' (F5 / Ctrl+R)';
+    const btnHome = document.getElementById('btn-home');
+    if (btnHome) btnHome.title = t('btn_home');
+    const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
+    if (btnToggleSidebar) btnToggleSidebar.title = (l === 'fr' ? 'Afficher/Masquer barre latérale' : 'Toggle sidebar') + ' (Ctrl+\\)';
+    const btnExtensions = document.getElementById('btn-extensions');
+    if (btnExtensions) btnExtensions.title = t('btn_extensions');
+    const btnShield = document.getElementById('btn-shield');
+    if (btnShield) btnShield.title = t('btn_shield');
+    const btnDownloads = document.getElementById('btn-downloads');
+    if (btnDownloads) btnDownloads.title = t('btn_downloads');
+    const btnHistory = document.getElementById('btn-history');
+    if (btnHistory) btnHistory.title = t('btn_history');
+    const btnBookmarks = document.getElementById('btn-bookmarks');
+    if (btnBookmarks) btnBookmarks.title = t('btn_bookmarks');
+    const btnPasswords = document.getElementById('btn-passwords');
+    if (btnPasswords) btnPasswords.title = t('btn_passwords');
+    const btnSettings = document.getElementById('btn-settings');
+    if (btnSettings) btnSettings.title = t('btn_settings');
+    const btnTurbo = document.getElementById('btn-gaming-turbo');
+    if (btnTurbo) btnTurbo.title = t('btn_turbo');
+    const btnAudio = document.getElementById('btn-audio-hub');
+    if (btnAudio) btnAudio.title = t('btn_audio_panel');
+
+    // NaviAI Panel translations
+    const naviaiTabAssist = document.getElementById('naviai-tab-assist');
+    if (naviaiTabAssist) naviaiTabAssist.innerHTML = t('naviai_tab_assist');
+    const naviaiTabDuck = document.getElementById('naviai-tab-duck');
+    if (naviaiTabDuck) {
+      naviaiTabDuck.innerHTML = `<span class="free-pill">${l === 'fr' ? 'GRATUIT' : 'FREE'}</span> ${t('naviai_tab_duck')}`;
+    }
+    const naviaiInput = document.getElementById('naviai-input');
+    if (naviaiInput) naviaiInput.placeholder = t('naviai_input_placeholder');
+    const naviaiBtnSend = document.getElementById('naviai-btn-send');
+    if (naviaiBtnSend) naviaiBtnSend.title = t('naviai_send_btn');
+    const naviaiBtnClear = document.getElementById('naviai-btn-clear');
+    if (naviaiBtnClear) naviaiBtnClear.title = t('naviai_clear_chat');
+    const naviaiBtnSettings = document.getElementById('naviai-btn-settings');
+    if (naviaiBtnSettings) naviaiBtnSettings.title = t('naviai_settings');
   }
 
   function applyCustomTheme(theme) {
@@ -1345,8 +1471,59 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  if (naviaiDuckFrame) {
+    naviaiDuckFrame.addEventListener('dom-ready', () => {
+      naviaiDuckFrame.executeJavaScript(`
+        try {
+          if (!localStorage.getItem('duckaiHasAgreedToTerms')) {
+            localStorage.setItem('duckaiHasAgreedToTerms', 'true');
+          }
+        } catch (_) {}
+
+        // Keep submit button unlocked and interactive
+        setInterval(() => {
+          const textarea = document.querySelector('textarea[name="user-prompt"]');
+          const submitBtn = document.querySelector('button[type="submit"]') || document.querySelector('form[data-chat-footer] button');
+          if (textarea && textarea.value.trim().length > 0 && submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.removeAttribute('disabled');
+            submitBtn.style.pointerEvents = 'auto';
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+            submitBtn.classList.remove('jHEvwgq4Tf_c8h9Sl_vG');
+          }
+        }, 120);
+
+        // Allow instant submit on Enter
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            const textarea = document.querySelector('textarea[name="user-prompt"]');
+            if (textarea && document.activeElement === textarea && textarea.value.trim().length > 0) {
+              const submitBtn = document.querySelector('button[type="submit"]') || document.querySelector('form[data-chat-footer] button');
+              if (submitBtn) {
+                e.preventDefault();
+                submitBtn.disabled = false;
+                submitBtn.click();
+              } else {
+                const form = textarea.closest('form');
+                if (form) {
+                  e.preventDefault();
+                  form.requestSubmit();
+                }
+              }
+            }
+          }
+        }, true);
+      `).catch(() => {});
+    });
+  }
+
   naviaiTabAssist?.addEventListener('click', () => switchNaviAIMode('assist'));
   naviaiTabDuck?.addEventListener('click', () => switchNaviAIMode('duck'));
+
+  document.getElementById('btn-open-duck-tab')?.addEventListener('click', () => {
+    window.naviddan.createTab('https://duck.ai/');
+  });
 
   // Free Key Direct Links
   naviaiLinkGemini?.addEventListener('click', () => {

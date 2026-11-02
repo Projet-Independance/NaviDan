@@ -16,26 +16,37 @@
           <circle cx="12" cy="12" r="3"/>
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
         </svg>
-        <h2 class="title">Paramètres</h2>
+        <h2 class="title" data-i18n="settings_title">Paramètres</h2>
       </div>
     </header>
 
     <div class="popup-body">
       <div class="setting-row">
         <div class="setting-title-group">
-          <span class="setting-main-label">Thème</span>
-          <span class="setting-sub-label">Apparence visuelle</span>
+          <span class="setting-main-label" data-i18n="settings_lang_label">Langue</span>
+          <span class="setting-sub-label" data-i18n="settings_lang_sub">Langue de l'interface</span>
         </div>
-        <select id="setting-theme" class="setting-select-control">
-          <option value="dark">Sombre</option>
-          <option value="light">Clair</option>
+        <select id="setting-language" class="setting-select-control">
+          <option value="fr">Français (FR)</option>
+          <option value="en">English (EN)</option>
         </select>
       </div>
 
       <div class="setting-row">
         <div class="setting-title-group">
-          <span class="setting-main-label">Moteur de recherche</span>
-          <span class="setting-sub-label">Recherche par défaut</span>
+          <span class="setting-main-label" data-i18n="settings_theme_label">Thème</span>
+          <span class="setting-sub-label" data-i18n="settings_theme_sub">Apparence visuelle</span>
+        </div>
+        <select id="setting-theme" class="setting-select-control">
+          <option value="dark" data-i18n="settings_theme_dark">Cyber Sombre</option>
+          <option value="light" data-i18n="settings_theme_light">Clair</option>
+        </select>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-title-group">
+          <span class="setting-main-label" data-i18n="settings_engine_label">Moteur de recherche</span>
+          <span class="setting-sub-label" data-i18n="settings_engine_sub">Recherche par défaut</span>
         </div>
         <select id="setting-engine" class="setting-select-control">
           <option value="google">Google</option>
@@ -48,8 +59,8 @@
 
       <div class="setting-row">
         <div class="setting-title-group">
-          <span class="setting-main-label">Bouclier anti-pub</span>
-          <span class="setting-sub-label">Filtrage pub &amp; traqueurs</span>
+          <span class="setting-main-label" data-i18n="settings_adblock_label">Bouclier anti-pub</span>
+          <span class="setting-sub-label" data-i18n="settings_adblock_sub">Filtrage pub &amp; traqueurs</span>
         </div>
         <label class="toggle-switch">
           <input type="checkbox" id="setting-adblock" checked />
@@ -59,8 +70,8 @@
 
       <div class="setting-row">
         <div class="setting-title-group">
-          <span class="setting-main-label">Barre des favoris</span>
-          <span class="setting-sub-label">Afficher sous l'URL</span>
+          <span class="setting-main-label" data-i18n="settings_bookmarks_label">Barre des favoris</span>
+          <span class="setting-sub-label" data-i18n="settings_bookmarks_sub">Afficher sous l'URL</span>
         </div>
         <label class="toggle-switch">
           <input type="checkbox" id="setting-bookmarks-bar" checked />
@@ -70,12 +81,13 @@
 
       <div class="setting-row" style="background: transparent; border: none; padding-top: 10px;">
         <div class="setting-title-group" style="width: 100%; text-align: center;">
-          <span class="setting-sub-label">NaviDan v1.0.0 • Moteur Chromium</span>
+          <span class="setting-sub-label" data-i18n="settings_version">NaviDan • Moteur Chromium</span>
         </div>
       </div>
     </div>
   </div>
 
+  <script src="../shared/i18n.js"></script>
   <script src="settings-popup.js"></script>
 </body>
 </html>

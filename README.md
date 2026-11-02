@@ -52,6 +52,12 @@ Un navigateur web de bureau moderne, ultra-rapide et personnalisable, propulsé 
    * **Onglets épinglés (Pinned Tabs 📌)** : Format ultra-compact favicon verrouillé à gauche, persistant à travers les espaces.
    * **Menu contextuel cyber au clic-droit sur onglet** : Épingler/Désépingler, Mettre en veille maintenant (`💤`), Déplacer vers un espace (sous-menu dynamique), Dupliquer, Couper le son, Fermer l'onglet ou les autres onglets.
 
+7. 🧩 **Gestionnaire d'Extensions Chromium & CRX** :
+   * **Installation 1-clic (Catalogue 16 extensions)** : *Dark Reader*, *uBlock Origin Lite*, *Bitwarden*, *DeepL Traducteur*, *Tampermonkey*, *I don't care about cookies*, *Privacy Badger*, *SponsorBlock*, *Return YouTube Dislike*, *Vimium*, *Wappalyzer*, *WhatFont*, *Clear Cache*, *React/Redux/Vue DevTools*.
+   * **Installation Chrome Web Store directe** : Téléchargement et unpack automatique de package CRX via URL ou ID.
+   * **Extensions décompressées (Unpacked / Dev)** : Importation directe de dossiers locaux d'extensions.
+   * **Barre d'outils dynamique** : Affichage direct des icônes d'extensions dans la barre d'outils avec support de leurs popups d'action.
+
 ---
 
 ## 🛡️ Protection & Navigation

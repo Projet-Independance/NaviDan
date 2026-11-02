@@ -3,9 +3,26 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { pathToFileURL } = require('url');
+
+// Windows Taskbar & Application Identity (Must be set before ready)
+app.setName('NaviDan');
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.navidan.browser');
+}
+process.title = 'NaviDan';
+
+// Suppress benign Electron ExtensionLoadWarning
+process.on('warning', (warning) => {
+  if (warning.name === 'ExtensionLoadWarning' || (warning.message && warning.message.includes('Permission'))) {
+    return;
+  }
+  console.warn(warning.name ? `[${warning.name}] ${warning.message}` : warning);
+});
+
 const Store = require('./store');
 const adblock = require('./adblock');
 const NaviAIService = require('./naviai');
+const extensionsManager = require('./extensions');
 
 let mainWindow = null;
 let store = null;
@@ -24,6 +41,7 @@ let isTurboModeActive = false;
 
 const popups = {
   shield: null,
+  extensions: null,
   downloads: null,
   history: null,
   bookmarks: null,
@@ -176,6 +194,18 @@ function setupSession(ses) {
     }
   });
 
+  // Set proper Origin & Referer for Duck.ai iframe inside file:// context
+  ses.webRequest.onBeforeSendHeaders({ urls: ['*://*.duck.ai/*', '*://*.duckduckgo.com/*'] }, (details, callback) => {
+    const requestHeaders = { ...details.requestHeaders };
+    if (!requestHeaders['Origin'] || requestHeaders['Origin'] === 'null' || requestHeaders['Origin'].startsWith('file:')) {
+      requestHeaders['Origin'] = 'https://duck.ai';
+    }
+    if (!requestHeaders['Referer'] || requestHeaders['Referer'].startsWith('file:')) {
+      requestHeaders['Referer'] = 'https://duck.ai/';
+    }
+    callback({ cancel: false, requestHeaders });
+  });
+
   // Allow embedding Duck.ai inside the sidebar iframe
   ses.webRequest.onHeadersReceived({ urls: ['*://*.duck.ai/*', '*://*.duckduckgo.com/*'] }, (details, callback) => {
     const responseHeaders = { ...details.responseHeaders };
@@ -183,6 +213,10 @@ function setupSession(ses) {
     delete responseHeaders['X-Frame-Options'];
     delete responseHeaders['content-security-policy'];
     delete responseHeaders['Content-Security-Policy'];
+    responseHeaders['access-control-allow-origin'] = ['https://duck.ai'];
+    responseHeaders['access-control-allow-credentials'] = ['true'];
+    responseHeaders['access-control-expose-headers'] = ['x-vqd-hash-1, x-vqd-4, x-vqd-accept, *'];
+    responseHeaders['access-control-allow-headers'] = ['*'];
     callback({ cancel: false, responseHeaders });
   });
 
@@ -342,6 +376,9 @@ function createTab(initialUrl = null, isIncognito = false) {
   wc.on('page-title-updated', (event, title) => {
     tabData.title = title || 'Nouvel onglet';
     if (mainWindow && !mainWindow.isDestroyed()) {
+      if (tabId === activeTabId) {
+        mainWindow.setTitle(tabData.title ? `${tabData.title} — NaviDan` : 'NaviDan');
+      }
       mainWindow.webContents.send('tab:updated', {
         id: tabId,
         title: tabData.title,
@@ -744,6 +781,7 @@ function selectTab(tabId) {
   updateActiveViewBounds();
 
   if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.setTitle(targetTab.title ? `${targetTab.title} — NaviDan` : 'NaviDan');
     mainWindow.webContents.send('tab:activated', tabId);
     mainWindow.webContents.send('nav:state', {
       canGoBack: canGoBack(targetTab.view.webContents),
@@ -936,7 +974,12 @@ function closeOtherTabs(tabId) {
 }
 
 function createWindow() {
-  const iconPath = path.join(__dirname, '../../assets/icon.svg');
+  const icoPath = path.join(__dirname, '../../assets/icon.ico');
+  const pngPath = path.join(__dirname, '../../assets/icon.png');
+  const svgPath = path.join(__dirname, '../../assets/icon.svg');
+  const iconPath = process.platform === 'win32'
+    ? (fs.existsSync(icoPath) ? icoPath : (fs.existsSync(pngPath) ? pngPath : svgPath))
+    : (fs.existsSync(pngPath) ? pngPath : svgPath);
 
   mainWindow = new BrowserWindow({
     title: 'NaviDan',
@@ -951,9 +994,17 @@ function createWindow() {
       preload: path.join(__dirname, '../preload/preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: false
+      sandbox: false,
+      webviewTag: true
     }
   });
+
+  mainWindow.setTitle('NaviDan');
+  if (fs.existsSync(iconPath)) {
+    try {
+      mainWindow.setIcon(nativeImage.createFromPath(iconPath));
+    } catch {}
+  }
 
   mainWindow.setMaxListeners(50);
 
@@ -1220,6 +1271,19 @@ function registerIpcHandlers() {
   });
   ipcMain.on('shield:close', () => closeAllPopups());
 
+  // --- Extensions Manager ---
+  ipcMain.on('extensions:toggle-popup', (e, coords) => {
+    toggleAnchoredPopup('extensions', coords, 380, 520, '../pages/extensions-popup.html', '../preload/extensions-preload.js');
+  });
+  ipcMain.on('extensions:close-popup', () => closeAllPopups());
+  ipcMain.handle('extensions:get', () => extensionsManager.getExtensionsList());
+  ipcMain.handle('extensions:get-catalog', () => extensionsManager.getCatalog());
+  ipcMain.handle('extensions:install-webstore', async (e, input) => extensionsManager.installFromWebStore(input));
+  ipcMain.handle('extensions:install-folder', async () => extensionsManager.installFromFolder());
+  ipcMain.handle('extensions:toggle', async (e, { id, enabled }) => extensionsManager.toggleExtension(id, enabled));
+  ipcMain.handle('extensions:uninstall', async (e, id) => extensionsManager.uninstallExtension(id));
+  ipcMain.handle('extensions:open-action', (e, { id, coords }) => extensionsManager.openActionPopup(id, coords));
+
   // --- Performance Manager ---
   let prevCpuTimes = getCpuTimes();
 
@@ -1361,7 +1425,7 @@ function registerIpcHandlers() {
       store.clearHistory();
     }
     if (options.downloads) {
-      downloads = [];
+      let downloads = [];
     }
     return true;
   });
@@ -1418,7 +1482,7 @@ function registerIpcHandlers() {
 
   // Downloads data & actions
   ipcMain.handle('download:clear-list', () => {
-    downloads = [];
+    let downloads = [];
     return true;
   });
   ipcMain.on('download:open-default-folder', () => {
@@ -1441,6 +1505,11 @@ function registerIpcHandlers() {
     }
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('settings:updated', updated);
+    }
+    for (const p of Object.values(popups)) {
+      if (p && !p.isDestroyed()) {
+        try { p.webContents.send('settings:updated', updated); } catch (_) {}
+      }
     }
     return updated;
   });
@@ -1983,8 +2052,11 @@ app.whenReady().then(() => {
   }
   isSidebarVisible = store.getSettings().sidebarVisible !== false;
   setupSession(session.defaultSession);
+  setupSession(session.fromPartition('persist:duckai'));
   registerIpcHandlers();
   createWindow();
+  extensionsManager.init(store, mainWindow);
+  extensionsManager.loadAllStoredExtensions();
 
   // Global shortcut for Mute Active Tab (Ctrl+M)
   try {
