@@ -2,6 +2,7 @@ const { app, BrowserWindow, BrowserView, ipcMain, shell, dialog, session, screen
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const https = require('https');
 const { pathToFileURL } = require('url');
 
 // Windows Taskbar & Application Identity (Must be set before ready)
@@ -1511,13 +1512,35 @@ function registerIpcHandlers() {
     const cpuInfo = `${cpus.length} cœurs • ${Math.max(browserCpuPercent, Math.round(systemCpuPercent / 4))}% nav`;
 
     const openTabs = [];
+    let appMetricsList = [];
+    try {
+      appMetricsList = app.getAppMetrics();
+    } catch {}
+
     tabs.forEach((tab, id) => {
+      let actualMemMb = 0;
+      let actualCpu = 0;
+      try {
+        if (tab.view && !tab.view.webContents.isDestroyed()) {
+          const pid = tab.view.webContents.getOSProcessId();
+          const match = appMetricsList.find(m => m.pid === pid);
+          if (match) {
+            actualMemMb = Math.round((match.memory && match.memory.workingSetSize ? match.memory.workingSetSize : 45000) / 1024);
+            actualCpu = Math.round(match.cpu ? match.cpu.percentCPUUsage : 0);
+          }
+        }
+      } catch {}
+
+      if (actualMemMb <= 0) {
+        actualMemMb = Math.round(42 + (id === activeTabId ? 28 : 12));
+      }
+
       openTabs.push({
         id,
         title: tab.title || 'Nouvel onglet',
         url: tab.url,
-        memMb: Math.round(35 + (id * 12)),
-        cpuPercent: Math.max(1, Math.min(25, Math.round((id === activeTabId ? 4 : 1) + Math.random() * 2)))
+        memMb: actualMemMb,
+        cpuPercent: Math.max(0, Math.min(100, actualCpu))
       });
     });
 
