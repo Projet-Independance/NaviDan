@@ -1,11 +1,12 @@
 {
   "name": "navidan",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Navigateur Web moderne, rapide et sécurisé développé sur mesure",
   "main": "src/main/main.js",
   "scripts": {
     "start": "node start.js",
-    "build:linux": "npx electron-builder --linux AppImage deb",
+    "build:linux": "npx electron-builder --linux tar.gz",
+    "build:linux:all": "npx electron-builder --linux AppImage deb tar.gz",
     "build:win": "npx electron-builder --win portable nsis"
   },
   "dependencies": {
@@ -19,6 +20,7 @@
     },
     "linux": {
       "target": [
+        "tar.gz",
         "AppImage",
         "deb"
       ],
