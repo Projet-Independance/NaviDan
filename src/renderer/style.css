@@ -542,6 +542,62 @@ body {
   gap: 5px;
 }
 
+/* Split View Toolbar Button */
+.split-btn {
+  color: #8b949e;
+  transition: all 0.15s ease;
+}
+
+.split-btn:hover {
+  color: #f0f6fc;
+  background: #21262d;
+}
+
+.split-btn.active {
+  background: rgba(56, 139, 253, 0.18);
+  color: #58a6ff;
+  border-color: rgba(56, 139, 253, 0.4);
+}
+
+/* Split View Draggable Central Divider */
+.split-divider {
+  position: fixed;
+  top: 82px;
+  bottom: 0;
+  width: 6px;
+  background: #161b22;
+  border-left: 1px solid #30363d;
+  border-right: 1px solid #30363d;
+  cursor: col-resize;
+  z-index: 999997;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.split-divider:hover, .split-divider.dragging {
+  background: #388bfd;
+  border-color: #58a6ff;
+  box-shadow: 0 0 10px rgba(56, 139, 253, 0.5);
+}
+
+.split-divider.hidden {
+  display: none !important;
+}
+
+.split-divider-handle {
+  width: 2px;
+  height: 24px;
+  background: #484f58;
+  border-radius: 1px;
+}
+
+.split-divider:hover .split-divider-handle, .split-divider.dragging .split-divider-handle {
+  background: #ffffff;
+}
+
 /* Mode Gaming Turbo Button */
 .turbo-btn {
   display: flex;

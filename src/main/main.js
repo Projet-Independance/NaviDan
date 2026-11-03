@@ -43,6 +43,10 @@ let pipWindow = null;
 let pipSourceTabId = null;
 let isTurboModeActive = false;
 
+// Split View State
+let splitSecondTabId = null; // ID of the second (right-hand) tab
+let splitRatio = 0.5; // Default 50/50 split (range: 0.2 to 0.8)
+
 const popups = {
   shield: null,
   extensions: null,
@@ -160,13 +164,65 @@ function updateActiveViewBounds(targetWin = null) {
   const sidebarWidth = (win === incognitoWindow) ? 0 : getSidebarWidth();
   const aiWidth = (win === incognitoWindow) ? 0 : getNaviAIWidth();
   
-  tab.view.setBounds({
-    x: sidebarWidth,
-    y: chromeHeight,
-    width: Math.max(100, width - sidebarWidth - aiWidth),
-    height: Math.max(100, height - chromeHeight)
-  });
-  tab.view.setAutoResize({ width: true, height: true });
+  const totalContentWidth = Math.max(100, width - sidebarWidth - aiWidth);
+  const totalContentHeight = Math.max(100, height - chromeHeight);
+
+  // Check if Split View is active in this window
+  const isSplitActive = (win === mainWindow) && splitSecondTabId && tabs.has(splitSecondTabId) && splitSecondTabId !== currentTabId;
+
+  if (isSplitActive) {
+    const secondTab = tabs.get(splitSecondTabId);
+    const dividerWidth = 6;
+    const availableWidth = totalContentWidth - dividerWidth;
+    const clampedRatio = Math.max(0.2, Math.min(0.8, splitRatio));
+    const leftWidth = Math.round(availableWidth * clampedRatio);
+    const rightWidth = Math.max(80, availableWidth - leftWidth);
+
+    // Left View
+    tab.view.setBounds({
+      x: sidebarWidth,
+      y: chromeHeight,
+      width: leftWidth,
+      height: totalContentHeight
+    });
+    tab.view.setAutoResize({ width: false, height: true });
+
+    // Right View
+    if (secondTab && secondTab.view && !secondTab.view.webContents.isDestroyed()) {
+      secondTab.view.setBounds({
+        x: sidebarWidth + leftWidth + dividerWidth,
+        y: chromeHeight,
+        width: rightWidth,
+        height: totalContentHeight
+      });
+      secondTab.view.setAutoResize({ width: false, height: true });
+    }
+
+    win.webContents.send('split:bounds-updated', {
+      active: true,
+      leftWidth,
+      rightWidth,
+      dividerX: sidebarWidth + leftWidth,
+      splitRatio: clampedRatio,
+      firstTabId: currentTabId,
+      secondTabId: splitSecondTabId
+    });
+  } else {
+    tab.view.setBounds({
+      x: sidebarWidth,
+      y: chromeHeight,
+      width: totalContentWidth,
+      height: totalContentHeight
+    });
+    tab.view.setAutoResize({ width: true, height: true });
+
+    if (win === mainWindow) {
+      win.webContents.send('split:bounds-updated', {
+        active: false,
+        splitRatio
+      });
+    }
+  }
 }
 
 function resolveSearchUrl(input) {
@@ -667,6 +723,69 @@ async function measureGamingPing() {
   });
 }
 
+// --- Split View Real Dual-Engine ---
+function toggleSplitView(targetTabId = null) {
+  if (!mainWindow || mainWindow.isDestroyed()) return { active: false };
+
+  // If already in split view with target or no target provided: toggle off
+  if (splitSecondTabId) {
+    if (!targetTabId || splitSecondTabId === targetTabId) {
+      const closingTab = tabs.get(splitSecondTabId);
+      if (closingTab && closingTab.view) {
+        try { mainWindow.removeBrowserView(closingTab.view); } catch {}
+      }
+      splitSecondTabId = null;
+      updateActiveViewBounds(mainWindow);
+      return { active: false };
+    }
+  }
+
+  // Find a suitable second tab
+  let secondId = targetTabId;
+  if (!secondId) {
+    // Pick the most recent non-active tab in mainWindow
+    const available = Array.from(tabs.values())
+      .filter(t => t.windowId === mainWindow.id && t.id !== activeTabId && !t.isIncognito);
+    if (available.length > 0) {
+      secondId = available[available.length - 1].id;
+    } else {
+      // Create a new tab on the right side if only one tab exists
+      const newTab = createTab(null, false, mainWindow);
+      secondId = newTab ? newTab.id : null;
+    }
+  }
+
+  if (!secondId || !tabs.has(secondId) || secondId === activeTabId) {
+    return { active: false };
+  }
+
+  splitSecondTabId = secondId;
+  const mainTab = tabs.get(activeTabId);
+  const secondTab = tabs.get(splitSecondTabId);
+
+  mainWindow.setBrowserView(null);
+  try {
+    if (mainTab && mainTab.view) mainWindow.addBrowserView(mainTab.view);
+    if (secondTab && secondTab.view) mainWindow.addBrowserView(secondTab.view);
+  } catch {
+    if (mainTab && mainTab.view) mainWindow.setBrowserView(mainTab.view);
+  }
+
+  updateActiveViewBounds(mainWindow);
+  return {
+    active: true,
+    firstTabId: activeTabId,
+    secondTabId: splitSecondTabId,
+    splitRatio
+  };
+}
+
+function setSplitRatio(ratio) {
+  splitRatio = Math.max(0.2, Math.min(0.8, Number(ratio) || 0.5));
+  updateActiveViewBounds(mainWindow);
+  return splitRatio;
+}
+
 function startSnipper() {
   if (!activeTabId || !tabs.has(activeTabId)) return;
   const tab = tabs.get(activeTabId);
@@ -806,12 +925,14 @@ function selectTab(tabId, targetWin = null) {
     targetTab.view.webContents.setBackgroundThrottling(false);
   }
 
-  // If there was an active view in this window, remove it
+  // If there was an active view in this window, remove it (unless kept in Split View)
   if (currentActiveId && tabs.has(currentActiveId)) {
     const prevTab = tabs.get(currentActiveId);
-    try {
-      win.removeBrowserView(prevTab.view);
-    } catch {}
+    if (prevTab && prevTab.view && (!splitSecondTabId || splitSecondTabId !== currentActiveId)) {
+      try {
+        win.removeBrowserView(prevTab.view);
+      } catch {}
+    }
   }
 
   windowActiveTabs.set(win.id, tabId);
@@ -820,7 +941,22 @@ function selectTab(tabId, targetWin = null) {
   }
 
   targetTab.lastActiveTime = Date.now();
-  win.setBrowserView(targetTab.view);
+
+  // If Split View is active with a second tab
+  if (win === mainWindow && splitSecondTabId && tabs.has(splitSecondTabId) && splitSecondTabId !== tabId) {
+    const secondTab = tabs.get(splitSecondTabId);
+    win.setBrowserView(null);
+    try {
+      win.addBrowserView(targetTab.view);
+      if (secondTab && secondTab.view && !secondTab.view.webContents.isDestroyed()) {
+        win.addBrowserView(secondTab.view);
+      }
+    } catch {
+      win.setBrowserView(targetTab.view);
+    }
+  } else {
+    win.setBrowserView(targetTab.view);
+  }
   updateActiveViewBounds(win);
 
   const isPrivate = targetTab.isIncognito || (win === incognitoWindow);
@@ -846,6 +982,15 @@ function closeTab(tabId, targetWin = null) {
   const win = targetWin || BrowserWindow.fromId(tab.windowId) || mainWindow;
   const winId = win ? win.id : null;
   const currentActiveId = winId ? (windowActiveTabs.get(winId) || (win === mainWindow ? activeTabId : null)) : activeTabId;
+
+  // Clean split view reference if closed
+  if (splitSecondTabId === tabId) {
+    splitSecondTabId = null;
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      try { mainWindow.removeBrowserView(tab.view); } catch {}
+      updateActiveViewBounds(mainWindow);
+    }
+  }
 
   if (currentActiveId === tabId && win && !win.isDestroyed()) {
     try {
@@ -1255,6 +1400,10 @@ function registerIpcHandlers() {
         click: () => duplicateTab(tabId)
       },
       {
+        label: (splitSecondTabId === tabId) ? '◫ Fermer la vue scindée' : '◫ Ouvrir en Split View (à droite)',
+        click: () => toggleSplitView(tabId)
+      },
+      {
         label: tab.isMuted ? '🔊 Rétablir le son' : '🔇 Couper le son',
         click: () => toggleTabMute(tabId)
       },
@@ -1524,15 +1673,19 @@ function registerIpcHandlers() {
         if (tab.view && !tab.view.webContents.isDestroyed()) {
           const pid = tab.view.webContents.getOSProcessId();
           const match = appMetricsList.find(m => m.pid === pid);
-          if (match) {
-            actualMemMb = Math.round((match.memory && match.memory.workingSetSize ? match.memory.workingSetSize : 45000) / 1024);
+          if (match && match.memory) {
+            // privateBytes gives true private RAM (DOM + JS heap), workingSetSize includes all shared DLLs/GPU mappings
+            const kb = (typeof match.memory.privateBytes === 'number' && match.memory.privateBytes > 0)
+              ? match.memory.privateBytes
+              : (match.memory.workingSetSize ? Math.round(match.memory.workingSetSize * 0.2) : 25000);
+            actualMemMb = Math.round(kb / 1024);
             actualCpu = Math.round(match.cpu ? match.cpu.percentCPUUsage : 0);
           }
         }
       } catch {}
 
       if (actualMemMb <= 0) {
-        actualMemMb = Math.round(42 + (id === activeTabId ? 28 : 12));
+        actualMemMb = Math.round(22 + (id === activeTabId ? 14 : 6));
       }
 
       openTabs.push({
@@ -1945,6 +2098,16 @@ function registerIpcHandlers() {
     return enabled;
   });
 
+  // --- Split View Dual-Engine Handlers ---
+  ipcMain.handle('split:toggle', (e, targetTabId) => toggleSplitView(targetTabId));
+  ipcMain.handle('split:set-ratio', (e, ratio) => setSplitRatio(ratio));
+  ipcMain.handle('split:get-state', () => ({
+    active: Boolean(splitSecondTabId && tabs.has(splitSecondTabId)),
+    firstTabId: activeTabId,
+    secondTabId: splitSecondTabId,
+    splitRatio
+  }));
+
   // --- Gaming Turbo Mode Handlers ---
   ipcMain.handle('turbo:toggle', () => toggleTurboMode());
   ipcMain.handle('turbo:get-state', () => ({
@@ -2356,6 +2519,15 @@ app.whenReady().then(() => {
     });
   } catch (err) {
     console.warn('Could not register Snipper shortcut:', err);
+  }
+
+  // Global shortcut for Split View (Ctrl+Alt+S)
+  try {
+    globalShortcut.register('CommandOrControl+Alt+S', () => {
+      toggleSplitView();
+    });
+  } catch (err) {
+    console.warn('Could not register Split View shortcut:', err);
   }
 
   // Global shortcut for NaviAI Sidebar (Ctrl+Shift+A)

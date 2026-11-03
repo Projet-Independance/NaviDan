@@ -135,6 +135,14 @@
 
       <!-- Action Tools -->
       <div class="toolbar-actions">
+        <!-- Split View Dual-Engine Button -->
+        <button id="btn-split-view" class="action-btn split-btn" title="Scinder l'écran en deux (Ctrl+Alt+S)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <line x1="12" y1="3" x2="12" y2="21"/>
+          </svg>
+        </button>
+
         <!-- Gaming Turbo Mode Toggle Button -->
         <button id="btn-turbo-mode" class="turbo-btn" title="Mode Gaming Turbo (Ctrl+Shift+G) : Gel des onglets + 100% CPU/GPU dédié">
           <span class="turbo-led"></span>
@@ -389,6 +397,11 @@
 
     <!-- Web View Container placeholder (BrowserView displays to the right of sidebar) -->
     <div id="webview-spacer" class="webview-spacer"></div>
+
+    <!-- Split View Central Draggable Divider Bar -->
+    <div id="split-divider" class="split-divider hidden" title="Glisser pour ajuster le ratio de l'écran">
+      <div class="split-divider-handle"></div>
+    </div>
 
     <!-- NaviAI Right Docked Sidebar Panel -->
     <aside id="naviai-panel" class="naviai-panel hidden">

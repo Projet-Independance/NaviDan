@@ -95,6 +95,12 @@ const naviDanApi = {
   openPip: () => ipcRenderer.send('pip:open-manual'),
   onPipMediaStatus: (cb) => ipcRenderer.on('pip:media-status', (_, s) => cb(s)),
 
+  // --- Split View Dual-Engine ---
+  toggleSplitView: (targetTabId) => ipcRenderer.invoke('split:toggle', targetTabId),
+  setSplitRatio: (ratio) => ipcRenderer.invoke('split:set-ratio', ratio),
+  getSplitState: () => ipcRenderer.invoke('split:get-state'),
+  onSplitBoundsUpdated: (cb) => ipcRenderer.on('split:bounds-updated', (_, d) => cb(d)),
+
   // --- Gaming Turbo Mode ---
   toggleTurbo: () => ipcRenderer.invoke('turbo:toggle'),
   getTurboState: () => ipcRenderer.invoke('turbo:get-state'),

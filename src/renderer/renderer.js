@@ -23,6 +23,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const securityBadge = document.getElementById('security-badge');
 
   // Top Action Buttons
+  const btnSplitView = document.getElementById('btn-split-view');
+  const splitDivider = document.getElementById('split-divider');
   const btnTurboMode = document.getElementById('btn-turbo-mode');
   const turboToast = document.getElementById('turbo-toast');
   let turboToastTimeout = null;
@@ -539,6 +541,81 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (s && btnTurboMode) btnTurboMode.classList.toggle('active', !!s.active);
     });
   }
+
+  // Split View UI Handlers
+  let isSplitDragging = false;
+  let currentSplitRatio = 0.5;
+
+  function updateSplitViewUI(state) {
+    if (!btnSplitView) return;
+    const isActive = Boolean(state && state.active);
+    btnSplitView.classList.toggle('active', isActive);
+
+    if (isActive && splitDivider) {
+      splitDivider.classList.remove('hidden');
+      if (typeof state.dividerX === 'number') {
+        splitDivider.style.left = `${state.dividerX}px`;
+      }
+      if (typeof state.splitRatio === 'number') {
+        currentSplitRatio = state.splitRatio;
+      }
+    } else if (splitDivider) {
+      splitDivider.classList.add('hidden');
+    }
+  }
+
+  btnSplitView?.addEventListener('click', async () => {
+    if (window.naviddan.toggleSplitView) {
+      const res = await window.naviddan.toggleSplitView();
+      updateSplitViewUI(res);
+    }
+  });
+
+  if (window.naviddan.onSplitBoundsUpdated) {
+    window.naviddan.onSplitBoundsUpdated((data) => {
+      updateSplitViewUI(data);
+    });
+  }
+
+  if (window.naviddan.getSplitState) {
+    window.naviddan.getSplitState().then(s => updateSplitViewUI(s));
+  }
+
+  // Draggable Split Divider
+  splitDivider?.addEventListener('mousedown', (e) => {
+    isSplitDragging = true;
+    splitDivider.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    e.preventDefault();
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isSplitDragging || !splitDivider) return;
+    const windowWidth = window.innerWidth;
+    const sidebarWidth = (sidebarVisible && !isIncognitoWindowMode) ? 58 : 0;
+    const contentWidth = windowWidth - sidebarWidth;
+    if (contentWidth <= 200) return;
+
+    const relativeX = e.clientX - sidebarWidth;
+    const newRatio = Math.max(0.2, Math.min(0.8, relativeX / contentWidth));
+    currentSplitRatio = newRatio;
+    splitDivider.style.left = `${e.clientX}px`;
+
+    if (window.naviddan.setSplitRatio) {
+      window.naviddan.setSplitRatio(newRatio);
+    }
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (isSplitDragging) {
+      isSplitDragging = false;
+      splitDivider?.classList.remove('dragging');
+      document.body.style.cursor = 'default';
+      if (window.naviddan.setSplitRatio) {
+        window.naviddan.setSplitRatio(currentSplitRatio);
+      }
+    }
+  });
 
   // NaviSnipper UI Handlers
   let snipperSuccessTimeout = null;
