@@ -1,6 +1,6 @@
 {
   "name": "navidan",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Navigateur Web moderne, rapide et sécurisé développé sur mesure",
   "main": "src/main/main.js",
   "scripts": {
@@ -31,6 +31,13 @@
         "nsis"
       ],
       "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true
     },
     "files": [
       "src/**/*",
