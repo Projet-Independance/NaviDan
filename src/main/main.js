@@ -23,6 +23,7 @@ const Store = require('./store');
 const adblock = require('./adblock');
 const NaviAIService = require('./naviai');
 const extensionsManager = require('./extensions');
+const updater = require('./updater');
 
 let mainWindow = null;
 let incognitoWindow = null;
@@ -2170,6 +2171,24 @@ function registerIpcHandlers() {
       mainWindow.webContents.send('naviai:trigger-prompt', data);
     }
   });
+
+  // --- In-App Updater ---
+  ipcMain.handle('updater:check', async () => {
+    return await updater.checkUpdate();
+  });
+
+  ipcMain.handle('updater:download', async (event, { downloadUrl, assetName }) => {
+    const sender = event.sender;
+    return await updater.downloadUpdate(downloadUrl, assetName, (progress) => {
+      if (!sender.isDestroyed()) {
+        sender.send('updater:progress', progress);
+      }
+    });
+  });
+
+  ipcMain.handle('updater:install', async () => {
+    return updater.installAndRestart();
+  });
 }
 
 // App lifecycle
@@ -2190,6 +2209,16 @@ app.whenReady().then(() => {
   createWindow();
   extensionsManager.init(store, mainWindow);
   extensionsManager.loadAllStoredExtensions();
+
+  // Automatic discreet update check after 5s
+  setTimeout(async () => {
+    try {
+      const update = await updater.checkUpdate();
+      if (update && update.updateAvailable && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('updater:available', update);
+      }
+    } catch (_) {}
+  }, 5000);
 
   // Global shortcut for Incognito Window (Ctrl+Shift+N)
   try {

@@ -869,6 +869,84 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
+  // --- In-App Updater Banner ---
+  const updateBanner = document.getElementById('update-banner');
+  const updateBannerTitle = document.getElementById('update-banner-title');
+  const updateBannerSub = document.getElementById('update-banner-sub');
+  const updateBannerProgress = document.getElementById('update-banner-progress');
+  const updateBannerProgressFill = document.getElementById('update-banner-progress-fill');
+  const btnUpdateAction = document.getElementById('btn-update-action');
+  const btnUpdateDismiss = document.getElementById('btn-update-dismiss');
+
+  let activeUpdateData = null;
+  let updateReadyToInstall = false;
+
+  window.naviddan?.onUpdateAvailable?.((update) => {
+    if (!update || !update.updateAvailable || !update.asset) return;
+    activeUpdateData = update;
+    const isEn = settings.language === 'en';
+    if (updateBannerTitle) {
+      updateBannerTitle.textContent = isEn
+        ? `NaviDan v${update.latestVersion} available`
+        : `Mise à jour v${update.latestVersion} disponible`;
+    }
+    if (updateBannerSub) {
+      updateBannerSub.textContent = isEn
+        ? 'Download to get the latest features & fixes'
+        : 'Télécharger pour installer les correctifs et nouveautés';
+    }
+    if (btnUpdateAction) {
+      btnUpdateAction.textContent = isEn ? 'Update now' : 'Mettre à jour';
+    }
+    updateBanner?.classList.remove('hidden');
+  });
+
+  btnUpdateDismiss?.addEventListener('click', () => {
+    updateBanner?.classList.add('hidden');
+  });
+
+  btnUpdateAction?.addEventListener('click', async () => {
+    const isEn = settings.language === 'en';
+    if (updateReadyToInstall) {
+      btnUpdateAction.disabled = true;
+      btnUpdateAction.textContent = isEn ? 'Restarting...' : 'Relance...';
+      await window.naviddan.installUpdate();
+      return;
+    }
+
+    if (!activeUpdateData || !activeUpdateData.asset) return;
+
+    btnUpdateAction.disabled = true;
+    btnUpdateAction.textContent = '...';
+    updateBannerProgress?.classList.remove('hidden');
+
+    window.naviddan.onUpdateProgress?.((p) => {
+      if (updateBannerProgressFill) updateBannerProgressFill.style.width = `${p.percent}%`;
+      const mb = (p.transferred / 1048576).toFixed(1);
+      const totalMb = (p.total / 1048576).toFixed(1);
+      if (updateBannerSub) {
+        updateBannerSub.textContent = `${p.percent}% (${mb} / ${totalMb} Mo)`;
+      }
+    });
+
+    try {
+      await window.naviddan.downloadUpdate(activeUpdateData.asset.downloadUrl, activeUpdateData.asset.name);
+      updateReadyToInstall = true;
+      btnUpdateAction.disabled = false;
+      btnUpdateAction.classList.add('install-mode');
+      btnUpdateAction.textContent = isEn ? 'Install & Restart' : 'Installer & Relancer';
+      if (updateBannerSub) {
+        updateBannerSub.textContent = isEn ? 'Ready to install!' : 'Prêt à installer !';
+      }
+    } catch (err) {
+      btnUpdateAction.disabled = false;
+      btnUpdateAction.textContent = isEn ? 'Retry' : 'Réessayer';
+      if (updateBannerSub) {
+        updateBannerSub.textContent = isEn ? 'Download failed' : 'Échec du téléchargement';
+      }
+    }
+  });
+
   window.naviddan.onFoundInPage?.((result) => {
     if (findCount && result) {
       findCount.textContent = `${result.activeMatchOrdinal || 0}/${result.matches || 0}`;

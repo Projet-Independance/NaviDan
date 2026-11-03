@@ -2311,3 +2311,132 @@ body.incognito-window .sidebar {
   background: #0d0b17;
   border-right-color: rgba(168, 85, 247, 0.2);
 }
+
+/* In-App Update Notification Banner */
+.update-banner {
+  position: absolute;
+  top: 86px;
+  right: 24px;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-left: 4px solid #2ea043;
+  padding: 10px 16px;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  animation: slideInDown 0.25s ease-out;
+  max-width: 460px;
+}
+
+.update-banner.hidden {
+  display: none !important;
+}
+
+.update-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.update-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.update-text-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.update-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f0f6fc;
+}
+
+.update-sub {
+  font-size: 11px;
+  color: #8b949e;
+  margin-top: 2px;
+}
+
+.update-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-update-action {
+  background: #238636;
+  color: #ffffff;
+  border: 1px solid rgba(240, 246, 252, 0.1);
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-update-action:hover {
+  background: #2ea043;
+}
+
+.btn-update-action.install-mode {
+  background: #1f6feb;
+}
+
+.btn-update-action.install-mode:hover {
+  background: #388bfd;
+}
+
+.btn-update-dismiss {
+  background: transparent;
+  border: none;
+  color: #8b949e;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.btn-update-dismiss:hover {
+  color: #f0f6fc;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.update-banner-progress-bar {
+  width: 100px;
+  height: 6px;
+  background: #21262d;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.update-banner-progress-bar.hidden {
+  display: none;
+}
+
+.update-banner-progress-fill {
+  width: 0%;
+  height: 100%;
+  background: #2ea043;
+  transition: width 0.2s ease;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

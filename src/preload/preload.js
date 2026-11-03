@@ -138,6 +138,13 @@ const naviDanApi = {
   onNaviAITrigger: (cb) => ipcRenderer.on('naviai:trigger-prompt', (_, data) => cb(data)),
   onNaviAISidebarChanged: (cb) => ipcRenderer.on('naviai:sidebar-changed', (_, state) => cb(state)),
 
+  // --- In-App Updater ---
+  checkUpdate: () => ipcRenderer.invoke('updater:check'),
+  downloadUpdate: (downloadUrl, assetName) => ipcRenderer.invoke('updater:download', { downloadUrl, assetName }),
+  installUpdate: () => ipcRenderer.invoke('updater:install'),
+  onUpdateAvailable: (cb) => ipcRenderer.on('updater:available', (_, data) => cb(data)),
+  onUpdateProgress: (cb) => ipcRenderer.on('updater:progress', (_, data) => cb(data)),
+
   // --- Events from Main ---
   onSettingsUpdated: (cb) => ipcRenderer.on('settings:updated', (_, s) => cb(s)),
   onTabCreated: (cb) => ipcRenderer.on('tab:created', (_, tab) => cb(tab)),
