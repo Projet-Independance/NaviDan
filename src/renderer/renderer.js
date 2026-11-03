@@ -26,6 +26,73 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnTurboMode = document.getElementById('btn-turbo-mode');
   const turboToast = document.getElementById('turbo-toast');
   let turboToastTimeout = null;
+
+  // Gaming HUD Overlay Elements & Loop
+  const gamingHud = document.getElementById('gaming-hud');
+  const gamingHudFps = document.getElementById('gaming-hud-fps');
+  const gamingHudPing = document.getElementById('gaming-hud-ping');
+  const gamingHudRam = document.getElementById('gaming-hud-ram');
+  const gamingHudClose = document.getElementById('gaming-hud-close');
+  let hudInterval = null;
+  let fpsFrames = 0;
+  let fpsLastTime = performance.now();
+  let currentFps = 60;
+  let isHudManuallyClosed = false;
+
+  function countFps(now) {
+    fpsFrames++;
+    if (now - fpsLastTime >= 1000) {
+      currentFps = Math.round((fpsFrames * 1000) / (now - fpsLastTime));
+      fpsFrames = 0;
+      fpsLastTime = now;
+      if (gamingHudFps) gamingHudFps.textContent = currentFps;
+    }
+    if (gamingHud && !gamingHud.classList.contains('hidden')) {
+      requestAnimationFrame(countFps);
+    }
+  }
+
+  gamingHudClose?.addEventListener('click', () => {
+    isHudManuallyClosed = true;
+    if (gamingHud) gamingHud.classList.add('hidden');
+    if (hudInterval) {
+      clearInterval(hudInterval);
+      hudInterval = null;
+    }
+  });
+
+  async function refreshHudMetrics() {
+    if (!window.naviddan?.getTurboHudMetrics) return;
+    try {
+      const data = await window.naviddan.getTurboHudMetrics();
+      if (data && gamingHudPing) {
+        gamingHudPing.textContent = `${data.pingMs} ms`;
+      }
+    } catch {}
+  }
+
+  function startGamingHud(state) {
+    if (isHudManuallyClosed || !gamingHud) return;
+    gamingHud.classList.remove('hidden');
+    if (gamingHudRam) {
+      gamingHudRam.textContent = `+${state.memSavedMb || 180} MB`;
+    }
+    fpsFrames = 0;
+    fpsLastTime = performance.now();
+    requestAnimationFrame(countFps);
+    refreshHudMetrics();
+    if (!hudInterval) {
+      hudInterval = setInterval(refreshHudMetrics, 2000);
+    }
+  }
+
+  function stopGamingHud() {
+    if (gamingHud) gamingHud.classList.add('hidden');
+    if (hudInterval) {
+      clearInterval(hudInterval);
+      hudInterval = null;
+    }
+  }
   const btnSnipper = document.getElementById('btn-snipper');
   const snipperResultBar = document.getElementById('snipper-result-bar');
   const snipperThumb = document.getElementById('snipper-thumb');
@@ -445,9 +512,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const isActive = !!state.active;
     btnTurboMode.classList.toggle('active', isActive);
     if (isActive) {
+      isHudManuallyClosed = false;
       showTurboToast(`${state.memSavedMb || 180} MB LIBÉRÉS • ${state.tabsFrozen || 0} ONGLET(S) GELÉ(S)`, true);
+      startGamingHud(state);
     } else {
       showTurboToast('REPRISE NORMALE DES RESSOURCES', false);
+      stopGamingHud();
     }
   }
 

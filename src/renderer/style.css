@@ -656,7 +656,84 @@ body {
   color: #f0f6fc;
 }
 
-/* Technical Anti-AI Turbo Toast Notification */
+/* Gaming HUD Compact Overlay (Anti-Lag & Hardware Stats) */
+.gaming-hud {
+  position: fixed;
+  top: 48px;
+  right: 18px;
+  background: rgba(13, 17, 23, 0.94);
+  border: 1px solid #30363d;
+  border-left: 3px solid #3fb950;
+  border-radius: 6px;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.75), 0 0 16px rgba(63, 185, 80, 0.15);
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+  font-size: 11px;
+  color: #f0f6fc;
+  z-index: 999998;
+  backdrop-filter: blur(8px);
+  user-select: none;
+  animation: hudSlide 0.15s ease-out;
+}
+
+.gaming-hud.hidden {
+  display: none !important;
+}
+
+.gaming-hud-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.gaming-hud-label {
+  font-size: 8px;
+  font-weight: 700;
+  color: #8b949e;
+  letter-spacing: 0.08em;
+}
+
+.gaming-hud-val {
+  font-size: 12px;
+  font-weight: 800;
+  color: #58a6ff;
+}
+
+.gaming-hud-val.highlight {
+  color: #3fb950;
+}
+
+.gaming-hud-sep {
+  width: 1px;
+  height: 18px;
+  background: #30363d;
+}
+
+.gaming-hud-close {
+  background: transparent;
+  border: none;
+  color: #8b949e;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 10px;
+  border-radius: 3px;
+  transition: all 0.1s ease;
+  margin-left: 2px;
+}
+
+.gaming-hud-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f0f6fc;
+}
+
+@keyframes hudSlide {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 .turbo-toast {
   position: fixed;
   bottom: 24px;

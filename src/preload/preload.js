@@ -98,6 +98,7 @@ const naviDanApi = {
   // --- Gaming Turbo Mode ---
   toggleTurbo: () => ipcRenderer.invoke('turbo:toggle'),
   getTurboState: () => ipcRenderer.invoke('turbo:get-state'),
+  getTurboHudMetrics: () => ipcRenderer.invoke('turbo:get-hud-metrics'),
   onTurboState: (cb) => ipcRenderer.on('turbo:state-changed', (_, s) => cb(s)),
 
   // --- NaviSnipper Screen Capture ---
