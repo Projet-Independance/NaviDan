@@ -65,7 +65,7 @@ function closeAllPopups(exceptKey = null) {
   }
 }
 
-function toggleAnchoredPopup(key, coords, width, height, htmlPage, preloadScript) {
+function toggleAnchoredPopup(key, coords, width, height, htmlPage, preloadScript, callerWin = null) {
   if (popups[key] && !popups[key].isDestroyed()) {
     popups[key].close();
     popups[key] = null;
@@ -74,14 +74,15 @@ function toggleAnchoredPopup(key, coords, width, height, htmlPage, preloadScript
 
   closeAllPopups();
 
-  if (!mainWindow || mainWindow.isDestroyed()) return;
+  const targetWin = (callerWin && !callerWin.isDestroyed()) ? callerWin : mainWindow;
+  if (!targetWin || targetWin.isDestroyed()) return;
 
-  const winBounds = mainWindow.getBounds();
+  const winBounds = targetWin.getBounds();
   let screenX;
   let screenY;
 
   if (coords && coords.fromSidebar) {
-    const sbWidth = getSidebarWidth();
+    const sbWidth = (targetWin === incognitoWindow) ? 0 : getSidebarWidth();
     screenX = Math.round(winBounds.x + sbWidth + 6);
     screenY = Math.max(winBounds.y + 70, Math.min(winBounds.y + winBounds.height - height - 10, winBounds.y + (coords.y || 100) - 20));
   } else {
@@ -102,7 +103,7 @@ function toggleAnchoredPopup(key, coords, width, height, htmlPage, preloadScript
     resizable: false,
     alwaysOnTop: true,
     skipTaskbar: true,
-    parent: mainWindow,
+    parent: targetWin,
     hasShadow: true,
     webPreferences: {
       preload: path.join(__dirname, preloadScript),
@@ -1268,7 +1269,7 @@ function registerIpcHandlers() {
     return true;
   });
   ipcMain.on('workspaces:toggle-popup', (e, coords) => {
-    toggleAnchoredPopup('workspaces', coords, 360, 560, '../pages/workspace-popup.html', '../preload/workspace-preload.js');
+    toggleAnchoredPopup('workspaces', coords, 360, 560, '../pages/workspace-popup.html', '../preload/workspace-preload.js', BrowserWindow.fromWebContents(e.sender));
   });
   ipcMain.on('workspaces:close', () => closeAllPopups());
 
@@ -1379,33 +1380,33 @@ function registerIpcHandlers() {
 
   // Popups handlers
   ipcMain.on('downloads:toggle-popup', (e, coords) => {
-    toggleAnchoredPopup('downloads', coords, 350, 440, '../pages/downloads-popup.html', '../preload/downloads-preload.js');
+    toggleAnchoredPopup('downloads', coords, 350, 440, '../pages/downloads-popup.html', '../preload/downloads-preload.js', BrowserWindow.fromWebContents(e.sender));
   });
   ipcMain.on('downloads:close', () => closeAllPopups());
 
   ipcMain.on('history:toggle-popup', (e, coords) => {
-    toggleAnchoredPopup('history', coords, 360, 460, '../pages/history-popup.html', '../preload/history-preload.js');
+    toggleAnchoredPopup('history', coords, 360, 460, '../pages/history-popup.html', '../preload/history-preload.js', BrowserWindow.fromWebContents(e.sender));
   });
   ipcMain.on('history:close', () => closeAllPopups());
 
   ipcMain.on('bookmarks:toggle-popup', (e, coords) => {
-    toggleAnchoredPopup('bookmarks', coords, 350, 440, '../pages/bookmarks-popup.html', '../preload/bookmarks-preload.js');
+    toggleAnchoredPopup('bookmarks', coords, 350, 440, '../pages/bookmarks-popup.html', '../preload/bookmarks-preload.js', BrowserWindow.fromWebContents(e.sender));
   });
   ipcMain.on('bookmarks:close', () => closeAllPopups());
 
   ipcMain.on('settings:toggle-popup', (e, coords) => {
-    toggleAnchoredPopup('settings', coords, 360, 430, '../pages/settings-popup.html', '../preload/settings-preload.js');
+    toggleAnchoredPopup('settings', coords, 360, 430, '../pages/settings-popup.html', '../preload/settings-preload.js', BrowserWindow.fromWebContents(e.sender));
   });
   ipcMain.on('settings:close', () => closeAllPopups());
 
   ipcMain.on('shield:toggle-popup', (e, coords) => {
-    toggleAnchoredPopup('shield', coords, 340, 410, '../pages/shield-popup.html', '../preload/shield-preload.js');
+    toggleAnchoredPopup('shield', coords, 340, 410, '../pages/shield-popup.html', '../preload/shield-preload.js', BrowserWindow.fromWebContents(e.sender));
   });
   ipcMain.on('shield:close', () => closeAllPopups());
 
   // --- Extensions Manager ---
   ipcMain.on('extensions:toggle-popup', (e, coords) => {
-    toggleAnchoredPopup('extensions', coords, 380, 520, '../pages/extensions-popup.html', '../preload/extensions-preload.js');
+    toggleAnchoredPopup('extensions', coords, 380, 520, '../pages/extensions-popup.html', '../preload/extensions-preload.js', BrowserWindow.fromWebContents(e.sender));
   });
   ipcMain.on('extensions:close-popup', () => closeAllPopups());
   ipcMain.handle('extensions:get', () => extensionsManager.getExtensionsList());
@@ -1414,7 +1415,7 @@ function registerIpcHandlers() {
   ipcMain.handle('extensions:install-folder', async () => extensionsManager.installFromFolder());
   ipcMain.handle('extensions:toggle', async (e, { id, enabled }) => extensionsManager.toggleExtension(id, enabled));
   ipcMain.handle('extensions:uninstall', async (e, id) => extensionsManager.uninstallExtension(id));
-  ipcMain.handle('extensions:open-action', (e, { id, coords }) => extensionsManager.openActionPopup(id, coords));
+  ipcMain.handle('extensions:open-action', (e, { id, coords }) => extensionsManager.openActionPopup(id, coords, BrowserWindow.fromWebContents(e.sender)));
 
   // --- Performance Manager ---
   let prevCpuTimes = getCpuTimes();
@@ -1444,7 +1445,7 @@ function registerIpcHandlers() {
   }
 
   ipcMain.on('perf:toggle-popup', (e, coords) => {
-    toggleAnchoredPopup('perf', coords, 360, 580, '../pages/perf-popup.html', '../preload/perf-preload.js');
+    toggleAnchoredPopup('perf', coords, 360, 580, '../pages/perf-popup.html', '../preload/perf-preload.js', BrowserWindow.fromWebContents(e.sender));
   });
   ipcMain.on('perf:close', () => closeAllPopups());
 
@@ -1515,7 +1516,7 @@ function registerIpcHandlers() {
 
   // --- Cleaner / Gestionnaire de Place ---
   ipcMain.on('cleaner:toggle-popup', (e, coords) => {
-    toggleAnchoredPopup('cleaner', coords, 360, 520, '../pages/cleaner-popup.html', '../preload/cleaner-preload.js');
+    toggleAnchoredPopup('cleaner', coords, 360, 520, '../pages/cleaner-popup.html', '../preload/cleaner-preload.js', BrowserWindow.fromWebContents(e.sender));
   });
   ipcMain.on('cleaner:close', () => closeAllPopups());
 
@@ -1564,7 +1565,7 @@ function registerIpcHandlers() {
 
   // --- Gestionnaire de Mots de Passe ---
   ipcMain.on('passwords:toggle-popup', (e, coords) => {
-    toggleAnchoredPopup('passwords', coords, 360, 520, '../pages/passwords-popup.html', '../preload/passwords-preload.js');
+    toggleAnchoredPopup('passwords', coords, 360, 520, '../pages/passwords-popup.html', '../preload/passwords-preload.js', BrowserWindow.fromWebContents(e.sender));
   });
   ipcMain.on('passwords:close', () => closeAllPopups());
   ipcMain.handle('passwords:get', () => store.getPasswords());
@@ -1577,7 +1578,7 @@ function registerIpcHandlers() {
 
   // --- Gestionnaire de Thèmes ---
   ipcMain.on('themes:toggle-popup', (e, coords) => {
-    toggleAnchoredPopup('themes', coords, 360, 480, '../pages/themes-popup.html', '../preload/themes-preload.js');
+    toggleAnchoredPopup('themes', coords, 360, 480, '../pages/themes-popup.html', '../preload/themes-preload.js', BrowserWindow.fromWebContents(e.sender));
   });
   ipcMain.on('themes:close', () => closeAllPopups());
   ipcMain.handle('themes:get', () => store.getThemeSettings());
@@ -2050,7 +2051,7 @@ function registerIpcHandlers() {
   });
 
   ipcMain.on('audio:toggle-popup', (e, coords) => {
-    toggleAnchoredPopup('audio', coords, 320, 360, '../pages/audio-popup.html', '../preload/audio-preload.js');
+    toggleAnchoredPopup('audio', coords, 320, 360, '../pages/audio-popup.html', '../preload/audio-preload.js', BrowserWindow.fromWebContents(e.sender));
   });
 
   ipcMain.on('audio:close', () => closeAllPopups());

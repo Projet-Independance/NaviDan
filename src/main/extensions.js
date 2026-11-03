@@ -478,7 +478,9 @@ try {
               if (fs.existsSync(fullScriptPath)) {
                 let code = fs.readFileSync(fullScriptPath, 'utf8');
                 code = code.replace(/chrome\.extension\.isAllowedFileSchemeAccess\s*\(\s*([^)]+)\s*\)/g, (_, fn) => `${fn}(true)`);
-                code = code.replace(/async\s+function\s+getFontList\(\)\s*\{[\s\S]*?return\s+new\s+Promise[\s\S]*?\}\s*\}\s*\);?\s*\}/g,
+                code = code.replace(/(async\s+)?function\s+getFontList\(\)\s*\{[\s\S]*?return\s+new\s+Promise[\s\S]*?\}\s*\}\s*\);?\s*(\}\s*\);)?\s*\}/g,
+                  'async function getFontList() { return ["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui"]; }');
+                code = code.replace(/async\s+function\s+getFontList\(\)\s*\{\s*return\s+\[[^\]]*\];\s*\}\s*\);\s*\}/g,
                   'async function getFontList() { return ["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui"]; }');
                 code = code.replace(/\(\{data,\s*error\}\)\s*=>\s*\{/g, '(res) => { const {data, error} = res || {};');
                 if (code.includes('/* NAVI_SHIM_START */')) {
@@ -832,7 +834,7 @@ try {
     }));
   }
 
-  openActionPopup(id, coords) {
+  openActionPopup(id, coords, callerWin = null) {
     if (this.actionPopup && !this.actionPopup.isDestroyed()) {
       this.actionPopup.close();
       this.actionPopup = null;
@@ -844,11 +846,14 @@ try {
       return false;
     }
 
+    const targetWin = (callerWin && !callerWin.isDestroyed()) ? callerWin : this.mainWindow;
+    if (!targetWin || targetWin.isDestroyed()) return false;
+
     const targetId = ext.runtimeId || ext.id;
     const popupFile = ext.actionPopup.replace(/^\.?\//, '');
     const popupUrl = `chrome-extension://${targetId}/${popupFile}`;
 
-    const winBounds = this.mainWindow.getBounds();
+    const winBounds = targetWin.getBounds();
     const width = 380;
     const height = 520;
     const screenX = Math.round(winBounds.x + (coords.x || 300) - width + 24);
@@ -866,7 +871,7 @@ try {
       resizable: true,
       alwaysOnTop: true,
       skipTaskbar: true,
-      parent: this.mainWindow,
+      parent: targetWin,
       hasShadow: true,
       webPreferences: {
         session: session.defaultSession,

@@ -78,3 +78,4 @@ if (searchForm && searchInput) {
     window.location.href = targetUrl;
   });
 }
+
