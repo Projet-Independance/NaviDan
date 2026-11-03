@@ -5,6 +5,9 @@ const naviDanApi = {
   minimize: () => ipcRenderer.send('window:minimize'),
   maximize: () => ipcRenderer.send('window:maximize'),
   close: () => ipcRenderer.send('window:close'),
+  openIncognitoWindow: () => ipcRenderer.invoke('window:open-incognito'),
+  isIncognitoWindow: () => window.location.search.includes('incognito=1'),
+  onInitIncognito: (cb) => ipcRenderer.on('window:init-incognito', () => cb?.()),
 
   // --- Tab Management ---
   createTab: (url, isIncognito = false) => ipcRenderer.invoke('tab:create', { url, isIncognito }),

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Navigation privée - NaviDan</title>
+  <link rel="stylesheet" href="incognito-newtab.css">
+</head>
+<body class="dark-incognito">
+  <div class="bg-glow"></div>
+
+  <div class="container">
+    <div class="incognito-header">
+      <div class="mask-icon-wrapper">
+        <svg class="mask-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 10s3-4 10-4 10 4 10 4-3 4-10 4-10-4-10-4z"/>
+          <circle cx="12" cy="10" r="2.5"/>
+          <path d="M3 14l3 6h12l3-6"/>
+        </svg>
+      </div>
+      <h1 id="title-text">Vous êtes en navigation privée</h1>
+      <p id="desc-text" class="subtitle">NaviDan ne conserve aucune trace de votre session sur cet appareil.</p>
+    </div>
+
+    <!-- Centered Search Form -->
+    <div class="search-box-wrapper">
+      <form id="search-form" class="search-form">
+        <span class="search-icon">🕶️</span>
+        <input 
+          type="text" 
+          id="search-input" 
+          placeholder="Rechercher sur le Web ou saisir une adresse..." 
+          autocomplete="off" 
+          autofocus
+        />
+        <button type="submit" class="search-btn">➔</button>
+      </form>
+    </div>
+
+    <!-- Privacy Feature Cards -->
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="card-icon">🚫</div>
+        <div class="card-content">
+          <h3 id="card1-title">Zéro Historique</h3>
+          <p id="card1-desc">Les pages consultées et requêtes de recherche ne sont jamais enregistrées dans l'historique.</p>
+        </div>
+      </div>
+
+      <div class="feature-card">
+        <div class="card-icon">🍪</div>
+        <div class="card-content">
+          <h3 id="card2-title">Cookies & Cache Éphémères</h3>
+          <p id="card2-desc">Les cookies et identifiants de session sont effacés de la mémoire dès fermeture de la fenêtre.</p>
+        </div>
+      </div>
+
+      <div class="feature-card">
+        <div class="card-icon">🛡️</div>
+        <div class="card-content">
+          <h3 id="card3-title">Anti-Traceurs Actif</h3>
+          <p id="card3-desc">Le bouclier bloque automatiquement les publicités intrusives et les scripts de suivi tiers.</p>
+        </div>
+      </div>
+
+      <div class="feature-card">
+        <div class="card-icon">🧠</div>
+        <div class="card-content">
+          <h3 id="card4-title">Mémoire Pure Isolée</h3>
+          <p id="card4-desc">Chaque session privée s'exécute dans un bac à sable RAM sans écriture sur le disque dur.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notice Footer -->
+    <div class="privacy-notice">
+      <span class="notice-icon">ℹ️</span>
+      <p id="notice-text">
+        <strong>Important :</strong> La navigation privée n'altère pas le comportement de votre employeur, école ou fournisseur d'accès Internet. Les fichiers téléchargés restent enregistrés dans vos dossiers.
+      </p>
+    </div>
+  </div>
+
+  <script src="incognito-newtab.js"></script>
+</body>
+</html>

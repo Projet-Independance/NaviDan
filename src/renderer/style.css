@@ -2254,3 +2254,60 @@ input:checked + .slider:before {
   height: 18px;
   object-fit: contain;
 }
+
+/* Incognito Badge & Window Theme */
+.incognito-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(168, 85, 247, 0.2);
+  border: 1px solid rgba(168, 85, 247, 0.45);
+  color: #d8b4fe;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  margin-left: 8px;
+  user-select: none;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.2);
+}
+
+.incognito-badge.hidden {
+  display: none !important;
+}
+
+body.incognito-window {
+  --bg-base: #0a0910;
+  --bg-header: #100d1c;
+  --bg-sidebar: #0d0b17;
+  --bg-tab-active: #1c172e;
+  --bg-tab-hover: #161224;
+  --border-color: rgba(168, 85, 247, 0.25);
+  --accent: #a855f7;
+}
+
+body.incognito-window .browser-chrome {
+  background: #100d1c;
+  border-bottom: 1px solid rgba(168, 85, 247, 0.35);
+}
+
+body.incognito-window .omnibox-wrapper {
+  background: #171329;
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+body.incognito-window .omnibox-wrapper:focus-within {
+  border-color: #a855f7;
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.35);
+}
+
+body.incognito-window .tab-item.active {
+  background: #1c172e;
+  border-top: 2px solid #a855f7;
+  color: #f3e8ff;
+}
+
+body.incognito-window .sidebar {
+  background: #0d0b17;
+  border-right-color: rgba(168, 85, 247, 0.2);
+}

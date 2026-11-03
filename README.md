@@ -9,7 +9,7 @@ Un navigateur web de bureau moderne, ultra-rapide et personnalisable, propulsé 
 
 1. 🤖 **NaviAI (Assistant Intelligent Intégré)** :
    * **Volet latéral ancré rétractable (Split-view)** : la page web se redimensionne en direct sans être masquée.
-   * **Onglet IA 100% Gratuite (Duck.ai Chat)** : Discutez instantanément avec **GPT-4o mini, Claude 3 Haiku, Llama 3.3 ou Mixtral** sans aucune clé d'API, sans compte et sans carte bancaire !
+   * **Onglet IA 100% Gratuite (Duck.ai Chat)** : Discutez instantanément avec **GPT-4o mini, Claude 3 Haiku, Llama 3.3 ou Mistral** sans aucune clé d'API, sans compte et sans carte bancaire !
    * **Multi-moteurs hybride** : Support de **Google Gemini** (1.5 Flash / 2.0 - gratuit 1 500 req/jour), **Groq** (Llama 3.3 à 500+ tok/s - gratuit 14 400 req/jour), **OpenAI** (GPT-4o mini) et **Ollama local** (100% privé, sans internet).
    * **Actions instantanées en 1 clic** : *Résumer la page*, *Traduire en français*, *Points clés & FAQ*, *Expliquer simplement*.
    * **Bulle contextuelle en page** : Sélectionner un passage sur n'importe quel site fait apparaître le badge rapide `⚡ NaviAI` (Résumer, Traduire, Expliquer).
@@ -65,7 +65,7 @@ Un navigateur web de bureau moderne, ultra-rapide et personnalisable, propulsé 
 - 🛡️ **Bouclier Anti-Publicité & Anti-Traqueurs** : Filtrage réseau en temps réel avec popover de protection par site.
 - 📥 **Gestionnaire de Téléchargements** : Suivi de la progression, ouverture directe du fichier ou de son dossier parent.
 - 🕒 **Historique de Navigation** : Recherche rapide et nettoyage en un clic.
-- 📑 **Navigation Multi-Onglets & Navigation Privée** : Isolation des sessions incognito.
+- 🕶️ **Mode Navigation Privée Strict (Fenêtre Incognito Dédiée)** : Fenêtre isolée en mémoire RAM (`Ctrl+Shift+N`), zéro écriture disque, aucun historique ni cookie conservé, bouclier anti-traceurs actif et page d'accueil privée furtive.
 - 🔍 **Barre d'Adresse Intelligente (Omnibox)** : Détection automatique des URLs directes et recherches Google, DuckDuckGo, Brave, Bing, Qwant.
 - 🔎 **Recherche dans la page (Ctrl+F)** & Outils de développement (F12).
 
@@ -76,7 +76,7 @@ Un navigateur web de bureau moderne, ultra-rapide et personnalisable, propulsé 
 | Raccourci | Action |
 |---|---|
 | `Ctrl + T` | Ouvrir un nouvel onglet |
-| `Ctrl + Shift + N` | Ouvrir un onglet en navigation privée |
+| `Ctrl + Shift + N` | Ouvrir une nouvelle fenêtre en navigation privée |
 | `Ctrl + W` | Fermer l'onglet actif |
 | `Ctrl + L` | Sélectionner la barre d'adresse |
 | `Ctrl + R` ou `F5` | Actualiser la page |

@@ -82,6 +82,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   let currentWorkspaceId = 'gaming';
   let settings = await window.naviddan.getSettings();
 
+  // Incognito Window Mode Check
+  const isIncognitoWindowMode = window.location.search.includes('incognito=1') || (window.naviddan?.isIncognitoWindow && window.naviddan.isIncognitoWindow());
+  if (isIncognitoWindowMode) {
+    document.body.classList.add('incognito-window');
+    const badge = document.getElementById('incognito-badge');
+    if (badge) badge.classList.remove('hidden');
+    if (bookmarksBarEl) bookmarksBarEl.classList.add('hidden');
+  }
+
+  window.naviddan?.onInitIncognito?.(() => {
+    document.body.classList.add('incognito-window');
+    const badge = document.getElementById('incognito-badge');
+    if (badge) badge.classList.remove('hidden');
+    if (bookmarksBarEl) bookmarksBarEl.classList.add('hidden');
+  });
+
   // Apply initial settings
   applyTheme(settings.theme || 'dark');
   applyLanguage(settings.language || 'fr');
@@ -241,8 +257,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Tab Action Buttons
-  btnNewTab?.addEventListener('click', () => window.naviddan.createTab());
-  btnNewIncognito?.addEventListener('click', () => window.naviddan.createTab(null, true));
+  btnNewTab?.addEventListener('click', () => {
+    if (isIncognitoWindowMode) {
+      window.naviddan.createTab(null, true);
+    } else {
+      window.naviddan.createTab();
+    }
+  });
+  btnNewIncognito?.addEventListener('click', () => {
+    if (isIncognitoWindowMode) {
+      window.naviddan.createTab(null, true);
+    } else {
+      window.naviddan.openIncognitoWindow();
+    }
+  });
 
   // Navigation Buttons
   btnBack?.addEventListener('click', () => window.naviddan.goBack());
@@ -592,8 +620,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     const btnNewTab = document.getElementById('btn-new-tab');
     if (btnNewTab) btnNewTab.title = t('new_tab') + ' (Ctrl+T)';
+    const incognitoBadgeText = document.getElementById('incognito-badge-text');
+    if (incognitoBadgeText) incognitoBadgeText.textContent = (l === 'fr' ? 'Navigation privée' : 'Private');
     const btnNewIncognito = document.getElementById('btn-new-incognito');
-    if (btnNewIncognito) btnNewIncognito.title = (l === 'fr' ? 'Nouvel onglet privé' : 'New private tab') + ' (Ctrl+Shift+N)';
+    if (btnNewIncognito) {
+      btnNewIncognito.title = isIncognitoWindowMode
+        ? (l === 'fr' ? 'Nouvel onglet privé (Ctrl+T)' : 'New private tab (Ctrl+T)')
+        : (l === 'fr' ? 'Nouvelle fenêtre privée (Ctrl+Shift+N)' : 'New private window (Ctrl+Shift+N)');
+    }
     const btnBack = document.getElementById('btn-back');
     if (btnBack) btnBack.title = t('btn_back') + ' (Alt+Left)';
     const btnForward = document.getElementById('btn-forward');
@@ -697,10 +731,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.addEventListener('keydown', (e) => {
     if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 't') {
       e.preventDefault();
-      window.naviddan.createTab();
+      if (isIncognitoWindowMode) {
+        window.naviddan.createTab(null, true);
+      } else {
+        window.naviddan.createTab();
+      }
     } else if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'n') {
       e.preventDefault();
-      window.naviddan.createTab(null, true);
+      if (isIncognitoWindowMode) {
+        window.naviddan.createTab(null, true);
+      } else {
+        window.naviddan.openIncognitoWindow();
+      }
     } else if (e.ctrlKey && e.key.toLowerCase() === 'w') {
       e.preventDefault();
       if (activeTabId) window.naviddan.closeTab(activeTabId);

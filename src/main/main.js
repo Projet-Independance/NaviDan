@@ -25,10 +25,12 @@ const NaviAIService = require('./naviai');
 const extensionsManager = require('./extensions');
 
 let mainWindow = null;
+let incognitoWindow = null;
 let store = null;
 let naviAIService = null;
-let tabs = new Map(); // tabId -> { id, view, isIncognito, url, title }
+let tabs = new Map(); // tabId -> { id, windowId, view, isIncognito, url, title }
 let activeTabId = null;
+let windowActiveTabs = new Map(); // winId -> activeTabId
 let nextTabId = 1;
 let downloads = [];
 let isSidebarVisible = true;
@@ -126,6 +128,7 @@ function toggleAnchoredPopup(key, coords, width, height, htmlPage, preloadScript
 }
 
 const NEW_TAB_URL = pathToFileURL(path.join(__dirname, '../pages/newtab.html')).href;
+const INCOGNITO_NEW_TAB_URL = pathToFileURL(path.join(__dirname, '../pages/incognito-newtab.html')).href;
 
 function getChromeHeight() {
   const settings = store.getSettings();
@@ -140,15 +143,19 @@ function getNaviAIWidth() {
   return isNaviAIOpen ? naviAIWidth : 0;
 }
 
-function updateActiveViewBounds() {
-  if (!mainWindow || !activeTabId) return;
-  const tab = tabs.get(activeTabId);
+function updateActiveViewBounds(targetWin = null) {
+  const win = targetWin || mainWindow;
+  if (!win || win.isDestroyed()) return;
+
+  const currentTabId = windowActiveTabs.get(win.id) || (win === mainWindow ? activeTabId : null);
+  if (!currentTabId || !tabs.has(currentTabId)) return;
+  const tab = tabs.get(currentTabId);
   if (!tab || !tab.view) return;
 
-  const [width, height] = mainWindow.getContentSize();
-  const chromeHeight = getChromeHeight();
-  const sidebarWidth = getSidebarWidth();
-  const aiWidth = getNaviAIWidth();
+  const [width, height] = win.getContentSize();
+  const chromeHeight = (win === incognitoWindow) ? 82 : getChromeHeight();
+  const sidebarWidth = (win === incognitoWindow) ? 0 : getSidebarWidth();
+  const aiWidth = (win === incognitoWindow) ? 0 : getNaviAIWidth();
   
   tab.view.setBounds({
     x: sidebarWidth,
@@ -283,13 +290,18 @@ function canGoForward(wc) {
   return typeof wc.canGoForward === 'function' ? wc.canGoForward() : false;
 }
 
-function createTab(initialUrl = null, isIncognito = false) {
+function createTab(initialUrl = null, isIncognito = false, targetWin = null) {
+  const win = targetWin || (isIncognito && incognitoWindow && !incognitoWindow.isDestroyed() ? incognitoWindow : mainWindow);
+  if (!win || win.isDestroyed()) return;
+
+  const isPrivate = !!isIncognito || (win === incognitoWindow);
   const tabId = nextTabId++;
-  const urlToLoad = initialUrl ? resolveSearchUrl(initialUrl) : NEW_TAB_URL;
+  const defaultUrl = isPrivate ? INCOGNITO_NEW_TAB_URL : NEW_TAB_URL;
+  const urlToLoad = initialUrl ? resolveSearchUrl(initialUrl) : defaultUrl;
 
   // Dedicated or shared session
   let viewSession;
-  if (isIncognito) {
+  if (isPrivate) {
     viewSession = session.fromPartition(`incognito-${Date.now()}-${tabId}`, { cache: false });
     setupSession(viewSession);
   } else {
@@ -309,10 +321,11 @@ function createTab(initialUrl = null, isIncognito = false) {
 
   const tabData = {
     id: tabId,
+    windowId: win.id,
     view: view,
-    isIncognito: !!isIncognito,
+    isIncognito: isPrivate,
     url: urlToLoad,
-    title: isIncognito ? 'Navigation privée' : 'Nouvel onglet',
+    title: isPrivate ? 'Navigation privée' : 'Nouvel onglet',
     workspaceId: currentActiveWorkspaceId,
     isPinned: false,
     isHibernated: false,
@@ -350,8 +363,9 @@ function createTab(initialUrl = null, isIncognito = false) {
 
   wc.on('did-start-loading', () => {
     tabData.isLoading = true;
-    if (activeTabId === tabId && mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('nav:state', {
+    const currentActiveId = windowActiveTabs.get(win.id) || (win === mainWindow ? activeTabId : null);
+    if (currentActiveId === tabId && win && !win.isDestroyed()) {
+      win.webContents.send('nav:state', {
         canGoBack: canGoBack(wc),
         canGoForward: canGoForward(wc),
         isLoading: true
@@ -364,8 +378,9 @@ function createTab(initialUrl = null, isIncognito = false) {
     tabData.canGoBack = canGoBack(wc);
     tabData.canGoForward = canGoForward(wc);
     
-    if (activeTabId === tabId && mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('nav:state', {
+    const currentActiveId = windowActiveTabs.get(win.id) || (win === mainWindow ? activeTabId : null);
+    if (currentActiveId === tabId && win && !win.isDestroyed()) {
+      win.webContents.send('nav:state', {
         canGoBack: tabData.canGoBack,
         canGoForward: tabData.canGoForward,
         isLoading: false
@@ -374,12 +389,13 @@ function createTab(initialUrl = null, isIncognito = false) {
   });
 
   wc.on('page-title-updated', (event, title) => {
-    tabData.title = title || 'Nouvel onglet';
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      if (tabId === activeTabId) {
-        mainWindow.setTitle(tabData.title ? `${tabData.title} — NaviDan` : 'NaviDan');
+    tabData.title = title || (isPrivate ? 'Navigation privée' : 'Nouvel onglet');
+    if (win && !win.isDestroyed()) {
+      const currentActiveId = windowActiveTabs.get(win.id) || (win === mainWindow ? activeTabId : null);
+      if (tabId === currentActiveId) {
+        win.setTitle(tabData.title ? `${tabData.title} — NaviDan${isPrivate ? ' (Privé)' : ''}` : 'NaviDan');
       }
-      mainWindow.webContents.send('tab:updated', {
+      win.webContents.send('tab:updated', {
         id: tabId,
         title: tabData.title,
         url: tabData.url,
@@ -395,11 +411,11 @@ function createTab(initialUrl = null, isIncognito = false) {
 
   wc.on('did-navigate', (event, url) => {
     tabData.url = url;
-    if (!isIncognito && !url.startsWith('file://')) {
+    if (!isPrivate && !url.startsWith('file://')) {
       store.addHistory({ title: tabData.title, url });
     }
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('tab:updated', {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('tab:updated', {
         id: tabId,
         title: tabData.title,
         url: tabData.url,
@@ -410,8 +426,9 @@ function createTab(initialUrl = null, isIncognito = false) {
         isAudible: !!tabData.isAudible,
         isMuted: !!tabData.isMuted
       });
-      if (activeTabId === tabId) {
-        mainWindow.webContents.send('nav:state', {
+      const currentActiveId = windowActiveTabs.get(win.id) || (win === mainWindow ? activeTabId : null);
+      if (currentActiveId === tabId) {
+        win.webContents.send('nav:state', {
           canGoBack: canGoBack(wc),
           canGoForward: canGoForward(wc),
           isLoading: wc.isLoading()
@@ -422,8 +439,8 @@ function createTab(initialUrl = null, isIncognito = false) {
 
   wc.on('did-navigate-in-page', (event, url) => {
     tabData.url = url;
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('tab:updated', {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('tab:updated', {
         id: tabId,
         title: tabData.title,
         url: tabData.url,
@@ -439,14 +456,15 @@ function createTab(initialUrl = null, isIncognito = false) {
 
   // Handle target="_blank" and window.open
   wc.setWindowOpenHandler(({ url }) => {
-    createTab(url, isIncognito);
+    createTab(url, isPrivate, win);
     return { action: 'deny' };
   });
 
   // Find in page result
   wc.on('found-in-page', (event, result) => {
-    if (activeTabId === tabId && mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('page:find-result', result);
+    const currentActiveId = windowActiveTabs.get(win.id) || (win === mainWindow ? activeTabId : null);
+    if (currentActiveId === tabId && win && !win.isDestroyed()) {
+      win.webContents.send('page:find-result', result);
     }
   });
 
@@ -454,8 +472,8 @@ function createTab(initialUrl = null, isIncognito = false) {
   view.webContents.loadURL(urlToLoad).catch(() => {});
 
   // Notify renderer
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('tab:created', {
+  if (win && !win.isDestroyed()) {
+    win.webContents.send('tab:created', {
       id: tabId,
       title: tabData.title,
       url: tabData.url,
@@ -469,7 +487,7 @@ function createTab(initialUrl = null, isIncognito = false) {
   }
 
   // Switch to this new tab
-  selectTab(tabId);
+  selectTab(tabId, win);
   return tabId;
 }
 
@@ -722,41 +740,38 @@ function muteBackgroundTabs() {
   return mutedCount;
 }
 
-function selectTab(tabId) {
-  if (!mainWindow || !tabs.has(tabId)) return;
+function selectTab(tabId, targetWin = null) {
+  if (!tabs.has(tabId)) return;
   const targetTab = tabs.get(tabId);
+  const win = targetWin || BrowserWindow.fromId(targetTab.windowId) || mainWindow;
+  if (!win || win.isDestroyed()) return;
 
-  // If tab was hibernated, wake it up immediately!
+  const currentActiveId = windowActiveTabs.get(win.id) || (win === mainWindow ? activeTabId : null);
+
+  // If tab was hibernated, wake it up
   if (targetTab.isHibernated) {
     targetTab.isHibernated = false;
     try {
       targetTab.view.webContents.setBackgroundThrottling(false);
     } catch {}
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('tab:updated', {
-        id: tabId,
-        title: targetTab.title,
-        url: targetTab.url,
-        isIncognito: targetTab.isIncognito,
-        workspaceId: targetTab.workspaceId,
-        isPinned: !!targetTab.isPinned,
-        isHibernated: false,
-        isAudible: !!targetTab.isAudible,
-        isMuted: !!targetTab.isMuted
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('tab:updated', {
+        id: targetTab.id,
+        isHibernated: false
       });
     }
   }
 
-  // Auto-detach PiP when switching away from a playing video
-  if (activeTabId && activeTabId !== tabId && tabs.has(activeTabId)) {
+  // Auto-detach PiP when switching away from a playing video (mainWindow only)
+  if (win === mainWindow && activeTabId && activeTabId !== tabId && tabs.has(activeTabId)) {
     const prevTab = tabs.get(activeTabId);
     if (prevTab && prevTab.hasPlayingVideo && (!pipWindow || pipWindow.isDestroyed())) {
       openPipWindow(activeTabId);
     }
   }
 
-  // If Turbo Mode is active, freeze the previous tab and activate the target tab
-  if (isTurboModeActive) {
+  // If Turbo Mode is active, freeze previous tab and activate target
+  if (isTurboModeActive && win === mainWindow) {
     if (activeTabId && activeTabId !== tabId && tabs.has(activeTabId)) {
       const prevTab = tabs.get(activeTabId);
       const isPipTab = (pipWindow && !pipWindow.isDestroyed() && activeTabId === pipSourceTabId);
@@ -767,39 +782,50 @@ function selectTab(tabId) {
     targetTab.view.webContents.setBackgroundThrottling(false);
   }
 
-  // If there was an active view, remove it
-  if (activeTabId && tabs.has(activeTabId)) {
-    const prevTab = tabs.get(activeTabId);
+  // If there was an active view in this window, remove it
+  if (currentActiveId && tabs.has(currentActiveId)) {
+    const prevTab = tabs.get(currentActiveId);
     try {
-      mainWindow.removeBrowserView(prevTab.view);
+      win.removeBrowserView(prevTab.view);
     } catch {}
   }
 
-  activeTabId = tabId;
-  targetTab.lastActiveTime = Date.now();
-  mainWindow.setBrowserView(targetTab.view);
-  updateActiveViewBounds();
+  windowActiveTabs.set(win.id, tabId);
+  if (win === mainWindow) {
+    activeTabId = tabId;
+  }
 
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.setTitle(targetTab.title ? `${targetTab.title} — NaviDan` : 'NaviDan');
-    mainWindow.webContents.send('tab:activated', tabId);
-    mainWindow.webContents.send('nav:state', {
+  targetTab.lastActiveTime = Date.now();
+  win.setBrowserView(targetTab.view);
+  updateActiveViewBounds(win);
+
+  const isPrivate = targetTab.isIncognito || (win === incognitoWindow);
+  if (win && !win.isDestroyed()) {
+    win.setTitle(targetTab.title ? `${targetTab.title} — NaviDan${isPrivate ? ' (Privé)' : ''}` : 'NaviDan');
+    win.webContents.send('tab:activated', tabId);
+    win.webContents.send('nav:state', {
       canGoBack: canGoBack(targetTab.view.webContents),
       canGoForward: canGoForward(targetTab.view.webContents),
-      isLoading: targetTab.view.webContents.isLoading()
+      isLoading: targetTab.view.webContents.isLoading(),
+      url: targetTab.url
     });
-    mainWindow.webContents.send('pip:media-status', targetTab.mediaStatus || { hasVideo: false });
-    broadcastAudioSummary();
+    if (win === mainWindow) {
+      win.webContents.send('pip:media-status', targetTab.mediaStatus || { hasVideo: false });
+      broadcastAudioSummary();
+    }
   }
 }
 
-function closeTab(tabId) {
+function closeTab(tabId, targetWin = null) {
   if (!tabs.has(tabId)) return;
   const tab = tabs.get(tabId);
+  const win = targetWin || BrowserWindow.fromId(tab.windowId) || mainWindow;
+  const winId = win ? win.id : null;
+  const currentActiveId = winId ? (windowActiveTabs.get(winId) || (win === mainWindow ? activeTabId : null)) : activeTabId;
 
-  if (activeTabId === tabId) {
+  if (currentActiveId === tabId && win && !win.isDestroyed()) {
     try {
-      mainWindow.removeBrowserView(tab.view);
+      win.removeBrowserView(tab.view);
     } catch {}
   }
 
@@ -809,20 +835,22 @@ function closeTab(tabId) {
   } catch {}
   tabs.delete(tabId);
 
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('tab:closed', tabId);
-    broadcastAudioSummary();
+  if (win && !win.isDestroyed()) {
+    win.webContents.send('tab:closed', tabId);
+    if (win === mainWindow) broadcastAudioSummary();
   }
 
-  // If active tab was closed, pick another tab belonging to current workspace
-  if (activeTabId === tabId) {
-    const wsTabIds = Array.from(tabs.values())
-      .filter(t => t.workspaceId === currentActiveWorkspaceId)
-      .map(t => t.id);
-    if (wsTabIds.length > 0) {
-      selectTab(wsTabIds[wsTabIds.length - 1]);
+  // If active tab was closed, pick another tab belonging to this window
+  if (currentActiveId === tabId) {
+    const winTabs = Array.from(tabs.values()).filter(t => t.windowId === winId);
+    if (winTabs.length > 0) {
+      selectTab(winTabs[winTabs.length - 1].id, win);
     } else {
-      createTab();
+      if (win === incognitoWindow) {
+        win.close();
+      } else {
+        createTab(null, false, win);
+      }
     }
   }
 }
@@ -999,6 +1027,9 @@ function createWindow() {
     }
   });
 
+  const winId = mainWindow.id;
+  windowActiveTabs.set(winId, null);
+
   mainWindow.setTitle('NaviDan');
   if (fs.existsSync(iconPath)) {
     try {
@@ -1011,55 +1042,146 @@ function createWindow() {
   mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
 
   mainWindow.on('resize', () => {
-    updateActiveViewBounds();
+    updateActiveViewBounds(mainWindow);
   });
 
   mainWindow.on('maximize', () => {
-    updateActiveViewBounds();
+    updateActiveViewBounds(mainWindow);
   });
 
   mainWindow.on('unmaximize', () => {
-    updateActiveViewBounds();
+    updateActiveViewBounds(mainWindow);
   });
 
   mainWindow.webContents.once('did-finish-load', () => {
     // Open default initial tab
-    createTab();
+    createTab(null, false, mainWindow);
   });
 }
 
-function registerIpcHandlers() {
-  // Window controls
-  ipcMain.on('window:minimize', () => mainWindow?.minimize());
-  ipcMain.on('window:maximize', () => {
-    if (!mainWindow) return;
-    if (mainWindow.isMaximized()) {
-      mainWindow.unmaximize();
-    } else {
-      mainWindow.maximize();
+function createIncognitoWindow() {
+  if (incognitoWindow && !incognitoWindow.isDestroyed()) {
+    incognitoWindow.focus();
+    createTab(null, true, incognitoWindow);
+    return incognitoWindow;
+  }
+
+  const icoPath = path.join(__dirname, '../../assets/icon.ico');
+  const pngPath = path.join(__dirname, '../../assets/icon.png');
+  const svgPath = path.join(__dirname, '../../assets/icon.svg');
+  const iconPath = process.platform === 'win32'
+    ? (fs.existsSync(icoPath) ? icoPath : (fs.existsSync(pngPath) ? pngPath : svgPath))
+    : (fs.existsSync(pngPath) ? pngPath : svgPath);
+
+  incognitoWindow = new BrowserWindow({
+    title: 'NaviDan (Navigation privée)',
+    width: 1200,
+    height: 800,
+    minWidth: 800,
+    minHeight: 500,
+    frame: false,
+    backgroundColor: '#0d0b14',
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
+    webPreferences: {
+      preload: path.join(__dirname, '../preload/preload.js'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: false,
+      webviewTag: true
     }
   });
-  ipcMain.on('window:close', () => mainWindow?.close());
+
+  const winId = incognitoWindow.id;
+  windowActiveTabs.set(winId, null);
+
+  incognitoWindow.setTitle('NaviDan (Navigation privée)');
+  if (fs.existsSync(iconPath)) {
+    try {
+      incognitoWindow.setIcon(nativeImage.createFromPath(iconPath));
+    } catch {}
+  }
+
+  incognitoWindow.loadFile(path.join(__dirname, '../renderer/index.html'), {
+    query: { incognito: '1' }
+  });
+
+  incognitoWindow.on('resize', () => updateActiveViewBounds(incognitoWindow));
+  incognitoWindow.on('maximize', () => updateActiveViewBounds(incognitoWindow));
+  incognitoWindow.on('unmaximize', () => updateActiveViewBounds(incognitoWindow));
+
+  incognitoWindow.on('closed', () => {
+    for (const [id, tab] of Array.from(tabs.entries())) {
+      if (tab.windowId === winId) {
+        try { tab.view.webContents.destroy(); } catch {}
+        tabs.delete(id);
+      }
+    }
+    windowActiveTabs.delete(winId);
+    incognitoWindow = null;
+  });
+
+  incognitoWindow.webContents.once('did-finish-load', () => {
+    if (incognitoWindow && !incognitoWindow.isDestroyed()) {
+      incognitoWindow.webContents.send('window:init-incognito');
+      createTab(null, true, incognitoWindow);
+    }
+  });
+
+  return incognitoWindow;
+}
+
+function registerIpcHandlers() {
+  ipcMain.handle('window:open-incognito', () => {
+    createIncognitoWindow();
+    return true;
+  });
+
+  // Window controls
+  ipcMain.on('window:minimize', (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender);
+    win?.minimize();
+  });
+  ipcMain.on('window:maximize', (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender);
+    if (!win) return;
+    if (win.isMaximized()) {
+      win.unmaximize();
+    } else {
+      win.maximize();
+    }
+  });
+  ipcMain.on('window:close', (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender);
+    win?.close();
+  });
 
   // Tabs
   ipcMain.handle('tab:create', (e, { url, isIncognito } = {}) => {
-    return createTab(url, isIncognito);
+    const win = BrowserWindow.fromWebContents(e.sender);
+    const incognito = (win === incognitoWindow) || !!isIncognito;
+    return createTab(url, incognito, win);
   });
   ipcMain.handle('tab:close', (e, tabId) => {
-    closeTab(tabId);
+    const win = BrowserWindow.fromWebContents(e.sender);
+    closeTab(tabId, win);
     return true;
   });
   ipcMain.handle('tab:select', (e, tabId) => {
-    selectTab(tabId);
+    const win = BrowserWindow.fromWebContents(e.sender);
+    selectTab(tabId, win);
     return true;
   });
   ipcMain.on('tab:open-new', (e, url) => {
-    createTab(url);
+    const win = BrowserWindow.fromWebContents(e.sender);
+    createTab(url, win === incognitoWindow, win);
   });
   ipcMain.handle('tab:toggle-pin', (e, tabId) => togglePinTab(tabId));
   ipcMain.handle('tab:move-to-workspace', (e, { tabId, wsId }) => moveTabToWorkspace(tabId, wsId));
   ipcMain.handle('tab:hibernate', (e, tabId) => hibernateTab(tabId));
-  ipcMain.handle('tab:wake', (e, tabId) => selectTab(tabId));
+  ipcMain.handle('tab:wake', (e, tabId) => {
+    const win = BrowserWindow.fromWebContents(e.sender);
+    selectTab(tabId, win);
+  });
   ipcMain.handle('tab:duplicate', (e, tabId) => duplicateTab(tabId));
   ipcMain.handle('tab:close-others', (e, tabId) => closeOtherTabs(tabId));
 
@@ -1150,80 +1272,90 @@ function registerIpcHandlers() {
   });
   ipcMain.on('workspaces:close', () => closeAllPopups());
 
+    function getActiveTabForSender(sender) {
+    const win = BrowserWindow.fromWebContents(sender);
+    if (win && windowActiveTabs.has(win.id)) {
+      const tabId = windowActiveTabs.get(win.id);
+      if (tabId && tabs.has(tabId)) return tabs.get(tabId);
+    }
+    return activeTabId && tabs.has(activeTabId) ? tabs.get(activeTabId) : null;
+  }
+
   // Navigation
   ipcMain.on('nav:go', (e, input) => {
-    if (!activeTabId || !tabs.has(activeTabId)) return;
-    const tab = tabs.get(activeTabId);
+    const tab = getActiveTabForSender(e.sender);
+    if (!tab) return;
     const resolved = resolveSearchUrl(input);
     tab.view.webContents.loadURL(resolved).catch(() => {});
   });
 
-  ipcMain.on('nav:back', () => {
-    if (!activeTabId || !tabs.has(activeTabId)) return;
-    const tab = tabs.get(activeTabId);
+  ipcMain.on('nav:back', (e) => {
+    const tab = getActiveTabForSender(e.sender);
+    if (!tab) return;
     if (tab.view.webContents.canGoBack()) tab.view.webContents.goBack();
   });
 
-  ipcMain.on('nav:forward', () => {
-    if (!activeTabId || !tabs.has(activeTabId)) return;
-    const tab = tabs.get(activeTabId);
+  ipcMain.on('nav:forward', (e) => {
+    const tab = getActiveTabForSender(e.sender);
+    if (!tab) return;
     if (tab.view.webContents.canGoForward()) tab.view.webContents.goForward();
   });
 
-  ipcMain.on('nav:reload', () => {
-    if (!activeTabId || !tabs.has(activeTabId)) return;
-    const tab = tabs.get(activeTabId);
+  ipcMain.on('nav:reload', (e) => {
+    const tab = getActiveTabForSender(e.sender);
+    if (!tab) return;
     tab.view.webContents.reload();
   });
 
-  ipcMain.on('nav:stop', () => {
-    if (!activeTabId || !tabs.has(activeTabId)) return;
-    const tab = tabs.get(activeTabId);
+  ipcMain.on('nav:stop', (e) => {
+    const tab = getActiveTabForSender(e.sender);
+    if (!tab) return;
     tab.view.webContents.stop();
   });
 
-  ipcMain.on('nav:home', () => {
-    if (!activeTabId || !tabs.has(activeTabId)) return;
-    const tab = tabs.get(activeTabId);
-    tab.view.webContents.loadURL(NEW_TAB_URL).catch(() => {});
+  ipcMain.on('nav:home', (e) => {
+    const tab = getActiveTabForSender(e.sender);
+    if (!tab) return;
+    const homeUrl = tab.isIncognito ? INCOGNITO_NEW_TAB_URL : NEW_TAB_URL;
+    tab.view.webContents.loadURL(homeUrl).catch(() => {});
   });
 
   // Page Actions
-  ipcMain.on('page:devtools', () => {
-    if (!activeTabId || !tabs.has(activeTabId)) return;
-    const tab = tabs.get(activeTabId);
+  ipcMain.on('page:devtools', (e) => {
+    const tab = getActiveTabForSender(e.sender);
+    if (!tab) return;
     tab.view.webContents.toggleDevTools();
   });
 
-  ipcMain.on('page:zoom-in', () => {
-    if (!activeTabId || !tabs.has(activeTabId)) return;
-    const tab = tabs.get(activeTabId);
+  ipcMain.on('page:zoom-in', (e) => {
+    const tab = getActiveTabForSender(e.sender);
+    if (!tab) return;
     const z = tab.view.webContents.getZoomFactor();
     tab.view.webContents.setZoomFactor(Math.min(2.5, z + 0.1));
   });
 
-  ipcMain.on('page:zoom-out', () => {
-    if (!activeTabId || !tabs.has(activeTabId)) return;
-    const tab = tabs.get(activeTabId);
+  ipcMain.on('page:zoom-out', (e) => {
+    const tab = getActiveTabForSender(e.sender);
+    if (!tab) return;
     const z = tab.view.webContents.getZoomFactor();
     tab.view.webContents.setZoomFactor(Math.max(0.4, z - 0.1));
   });
 
-  ipcMain.on('page:zoom-reset', () => {
-    if (!activeTabId || !tabs.has(activeTabId)) return;
-    const tab = tabs.get(activeTabId);
+  ipcMain.on('page:zoom-reset', (e) => {
+    const tab = getActiveTabForSender(e.sender);
+    if (!tab) return;
     tab.view.webContents.setZoomFactor(1.0);
   });
 
   ipcMain.on('page:find', (e, { text, forward }) => {
-    if (!activeTabId || !tabs.has(activeTabId) || !text) return;
-    const tab = tabs.get(activeTabId);
-    tab.view.webContents.findInPage(text, { forward: forward !== false, findNext: true });
+    const tab = getActiveTabForSender(e.sender);
+    if (!tab || !text) return;
+    tab.view.webContents.findInPage(text, { forward: forward ?? true, findNext: false });
   });
 
-  ipcMain.on('page:stop-find', () => {
-    if (!activeTabId || !tabs.has(activeTabId)) return;
-    const tab = tabs.get(activeTabId);
+  ipcMain.on('page:stop-find', (e) => {
+    const tab = getActiveTabForSender(e.sender);
+    if (!tab) return;
     tab.view.webContents.stopFindInPage('clearSelection');
   });
 
@@ -2057,6 +2189,15 @@ app.whenReady().then(() => {
   createWindow();
   extensionsManager.init(store, mainWindow);
   extensionsManager.loadAllStoredExtensions();
+
+  // Global shortcut for Incognito Window (Ctrl+Shift+N)
+  try {
+    globalShortcut.register('CommandOrControl+Shift+N', () => {
+      createIncognitoWindow();
+    });
+  } catch (err) {
+    console.warn('Could not register Incognito shortcut:', err);
+  }
 
   // Global shortcut for Mute Active Tab (Ctrl+M)
   try {
