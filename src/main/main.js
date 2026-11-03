@@ -1407,16 +1407,26 @@ function registerIpcHandlers() {
 
   // --- Extensions Manager ---
   ipcMain.on('extensions:toggle-popup', (e, coords) => {
-    toggleAnchoredPopup('extensions', coords, 380, 520, '../pages/extensions-popup.html', '../preload/extensions-preload.js', BrowserWindow.fromWebContents(e.sender));
+    const senderWin = BrowserWindow.fromWebContents(e.sender);
+    if (senderWin === incognitoWindow) return;
+    toggleAnchoredPopup('extensions', coords, 380, 520, '../pages/extensions-popup.html', '../preload/extensions-preload.js', senderWin);
   });
   ipcMain.on('extensions:close-popup', () => closeAllPopups());
-  ipcMain.handle('extensions:get', () => extensionsManager.getExtensionsList());
+  ipcMain.handle('extensions:get', (e) => {
+    const senderWin = e ? BrowserWindow.fromWebContents(e.sender) : null;
+    if (senderWin && senderWin === incognitoWindow) return [];
+    return extensionsManager.getExtensionsList();
+  });
   ipcMain.handle('extensions:get-catalog', () => extensionsManager.getCatalog());
   ipcMain.handle('extensions:install-webstore', async (e, input) => extensionsManager.installFromWebStore(input));
   ipcMain.handle('extensions:install-folder', async () => extensionsManager.installFromFolder());
   ipcMain.handle('extensions:toggle', async (e, { id, enabled }) => extensionsManager.toggleExtension(id, enabled));
   ipcMain.handle('extensions:uninstall', async (e, id) => extensionsManager.uninstallExtension(id));
-  ipcMain.handle('extensions:open-action', (e, { id, coords }) => extensionsManager.openActionPopup(id, coords, BrowserWindow.fromWebContents(e.sender)));
+  ipcMain.handle('extensions:open-action', (e, { id, coords }) => {
+    const callerWin = BrowserWindow.fromWebContents(e.sender);
+    if (callerWin === incognitoWindow) return false;
+    return extensionsManager.openActionPopup(id, coords, callerWin);
+  });
 
   // --- Performance Manager ---
   let prevCpuTimes = getCpuTimes();

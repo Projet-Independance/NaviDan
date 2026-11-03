@@ -222,6 +222,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   sidebarBtnExtensions?.addEventListener('click', (e) => {
+    if (isIncognitoWindowMode) return;
     e.stopPropagation();
     window.naviddan.openExtensionsMenu(getSidebarAnchorCoords(sidebarBtnExtensions));
   });
@@ -336,6 +337,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Chrome Extensions Toolbar & Manager
   async function refreshExtensionsToolbar() {
     if (!extensionsToolbar || !window.naviddan?.getExtensions) return;
+    if (isIncognitoWindowMode) {
+      extensionsToolbar.innerHTML = '';
+      if (btnExtensions) btnExtensions.style.display = 'none';
+      if (sidebarBtnExtensions) sidebarBtnExtensions.style.display = 'none';
+      return;
+    }
     try {
       const list = await window.naviddan.getExtensions();
       extensionsToolbar.innerHTML = '';
@@ -376,6 +383,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   btnExtensions?.addEventListener('click', (e) => {
+    if (isIncognitoWindowMode) return;
     e.stopPropagation();
     const rect = btnExtensions.getBoundingClientRect();
     window.naviddan.openExtensionsMenu({

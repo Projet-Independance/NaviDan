@@ -309,18 +309,30 @@ try {
     return Promise.resolve(list);
   };
 
-  // Windows emulation
+  // Windows & Tabs emulation
   c.windows.getAll = function(opt, cb) {
     const callback = typeof opt === 'function' ? opt : cb;
-    const list = [{ id: 1, focused: true, state: 'normal' }];
+    const list = [{ id: 1, focused: true, state: 'normal', tabs: [{ id: 1, active: true, url: 'https://google.com' }] }];
     if (typeof callback === 'function') callback(list);
     return Promise.resolve(list);
   };
   c.windows.getCurrent = function(opt, cb) {
     const callback = typeof opt === 'function' ? opt : cb;
-    const win = { id: 1, focused: true, state: 'normal' };
+    const win = { id: 1, focused: true, state: 'normal', tabs: [{ id: 1, active: true, url: 'https://google.com' }] };
     if (typeof callback === 'function') callback(win);
     return Promise.resolve(win);
+  };
+
+  c.tabs.query = function(opt, cb) {
+    const callback = typeof opt === 'function' ? opt : cb;
+    const list = [{ id: 1, active: true, highlighted: true, incognito: false, status: 'complete', url: 'https://google.com', title: 'Active Tab', windowId: 1 }];
+    if (typeof callback === 'function') callback(list);
+    return Promise.resolve(list);
+  };
+  c.tabs.get = function(tabId, cb) {
+    const tab = { id: tabId || 1, active: true, url: 'https://google.com', title: 'Active Tab', windowId: 1 };
+    if (typeof cb === 'function') cb(tab);
+    return Promise.resolve(tab);
   };
 
   c.commands.getAll = function(cb) {
@@ -438,6 +450,8 @@ try {
           code = code.replace(/static\s+DYNAMIC_THEME_FIXES_INDEX;/g, 'static DYNAMIC_THEME_FIXES_INDEX = { regexps: [], hardPatterns: [], hostNodes: new Map(), pathNodes: new Map() };');
           code = code.replace(/static\s+INVERSION_FIXES_INDEX;/g, 'static INVERSION_FIXES_INDEX = { regexps: [], hardPatterns: [], hostNodes: new Map(), pathNodes: new Map() };');
           code = code.replace(/static\s+STATIC_THEMES_INDEX;/g, 'static STATIC_THEMES_INDEX = { regexps: [], hardPatterns: [], hostNodes: new Map(), pathNodes: new Map() };');
+          code = code.replace(/allowedSenderURL\.includes\(\s*sender\.url\s*\)/g, 'true');
+          code = code.replace(/\(await queryTabs\(\{discarded:\s*false\}\)\)/g, '(Array.isArray(await queryTabs({discarded: false})) ? (await queryTabs({discarded: false})) : [])');
           code = code.replace(/case\s+MessageTypeUItoBG\.GET_DATA:\s*Messenger\.adapter\s*\.collect\(\)\s*\.then\(\(data\)\s*=>\s*sendResponse\(\{data\}\)\);/g, 
             'case MessageTypeUItoBG.GET_DATA: Messenger.adapter.collect().then((data) => sendResponse({data})).catch((err) => { console.error("collect err:", err); sendResponse({data: { isReady: true, isEnabled: true, settings: { theme: {} }, news: [], shortcuts: [] }}); });');
           if (code.includes('/* NAVI_SHIM_START */')) {
@@ -480,6 +494,9 @@ try {
                 code = code.replace(/chrome\.extension\.isAllowedFileSchemeAccess\s*\(\s*([^)]+)\s*\)/g, (_, fn) => `${fn}(true)`);
                 code = code.replace(/async\s+function\s+getFontList\(\)\s*\{[\s\S]*?const\s+fonts\s*=\s*list\.map[\s\S]*?\}\s*\);\s*\}\s*\);\s*\}/g, 'async function getFontList() { return ["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui"]; }');
                 code = code.replace(/\(\{data,\s*error\}\)\s*=>\s*\{/g, '(res) => { const {data, error} = res || {};');
+                code = code.replace(/function\s+renderBody\(data,\s*fonts,\s*installation,\s*actions\)\s*\{/g, 'function renderBody(data, fonts, installation, actions) { if (!data) data = { isReady: true, isEnabled: true, settings: { theme: { mode: 1 }, previewNewDesign: true }, news: [], shortcuts: [] }; if (!data.settings) data.settings = { theme: { mode: 1 }, previewNewDesign: true };');
+                code = code.replace(/for\s*\(\s*const\s+window\s+of\s+w\s*\)\s*\{/g, 'for (const window of (Array.isArray(w) ? w : [])) { if (!window || !window.tabs || !window.tabs[0]) continue;');
+                code = code.replace(/async\s+sendRequest\s*\(\s*type\s*,\s*data\s*\)\s*\{[\s\S]*?return\s+new\s+Promise[\s\S]*?chrome\.runtime\.sendMessage[\s\S]*?\}\s*\)\s*;\s*\}\s*\)\s*;\s*\}/g, 'async sendRequest(type, data) { return new Promise((resolve, reject) => { let done = false; const tm = setTimeout(() => { if (!done) { done = true; resolve({ isReady: true, isEnabled: true, settings: { theme: { mode: 1 }, previewNewDesign: true }, news: [], shortcuts: [] }); } }, 700); try { chrome.runtime.sendMessage({type, data}, (res) => { if (done) return; done = true; clearTimeout(tm); const {data: rData, error} = res || {}; if (error) return reject(error); resolve(rData || { isReady: true, isEnabled: true, settings: { theme: { mode: 1 }, previewNewDesign: true }, news: [], shortcuts: [] }); }); } catch (_) { if (!done) { done = true; clearTimeout(tm); resolve({ isReady: true, isEnabled: true, settings: { theme: { mode: 1 }, previewNewDesign: true }, news: [], shortcuts: [] }); } } }); }');
                 if (code.includes('/* NAVI_SHIM_START */')) {
                   code = code.replace(/\/\* NAVI_SHIM_START \*\/[\s\S]*?\/\* NAVI_SHIM_END \*\/\s*/, polyfillCode + '\n');
                 } else {
