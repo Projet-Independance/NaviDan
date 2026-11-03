@@ -215,7 +215,7 @@ function setupSession(ses) {
     callback({ cancel: false, requestHeaders });
   });
 
-  // Allow embedding Duck.ai inside the sidebar iframe
+  // Allow embedding Duck.ai inside the sidebar iframe with strict header whitelist
   ses.webRequest.onHeadersReceived({ urls: ['*://*.duck.ai/*', '*://*.duckduckgo.com/*'] }, (details, callback) => {
     const responseHeaders = { ...details.responseHeaders };
     delete responseHeaders['x-frame-options'];
@@ -224,8 +224,8 @@ function setupSession(ses) {
     delete responseHeaders['Content-Security-Policy'];
     responseHeaders['access-control-allow-origin'] = ['https://duck.ai'];
     responseHeaders['access-control-allow-credentials'] = ['true'];
-    responseHeaders['access-control-expose-headers'] = ['x-vqd-hash-1, x-vqd-4, x-vqd-accept, *'];
-    responseHeaders['access-control-allow-headers'] = ['*'];
+    responseHeaders['access-control-expose-headers'] = ['x-vqd-hash-1, x-vqd-4, x-vqd-accept'];
+    responseHeaders['access-control-allow-headers'] = ['Content-Type, Authorization, x-vqd-hash-1, x-vqd-4, x-vqd-accept'];
     callback({ cancel: false, responseHeaders });
   });
 
@@ -1041,6 +1041,18 @@ function createWindow() {
 
   mainWindow.setMaxListeners(50);
 
+  // Electron Security Rule 11: Validate webview attachment & strip preload/nodeIntegration
+  mainWindow.webContents.on('will-attach-webview', (event, webPreferences, params) => {
+    delete webPreferences.preload;
+    delete webPreferences.preloadURL;
+    webPreferences.nodeIntegration = false;
+    webPreferences.contextIsolation = true;
+    const src = String(params.src || '');
+    if (src && src !== 'about:blank' && !src.startsWith('https://duck.ai') && !src.startsWith('https://duckduckgo.com')) {
+      event.preventDefault();
+    }
+  });
+
   mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
 
   mainWindow.on('resize', () => {
@@ -1089,7 +1101,7 @@ function createIncognitoWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: false,
-      webviewTag: true
+      webviewTag: false
     }
   });
 
@@ -1574,7 +1586,7 @@ function registerIpcHandlers() {
     return true;
   });
 
-  // --- Gestionnaire de Mots de Passe ---
+  // --- Gestionnaire de Mots de Passe (Coffre-fort DPAPI + PIN) ---
   ipcMain.on('passwords:toggle-popup', (e, coords) => {
     toggleAnchoredPopup('passwords', coords, 360, 520, '../pages/passwords-popup.html', '../preload/passwords-preload.js', BrowserWindow.fromWebContents(e.sender));
   });
@@ -1582,6 +1594,9 @@ function registerIpcHandlers() {
   ipcMain.handle('passwords:get', () => store.getPasswords());
   ipcMain.handle('passwords:add', (e, item) => store.addPassword(item));
   ipcMain.handle('passwords:remove', (e, id) => store.removePassword(id));
+  ipcMain.handle('passwords:has-pin', () => store.hasVaultPin());
+  ipcMain.handle('passwords:set-pin', (e, pin) => store.setVaultPin(pin));
+  ipcMain.handle('passwords:verify-pin', (e, pin) => store.verifyVaultPin(pin));
   ipcMain.handle('passwords:get-current-domain', () => {
     if (!activeTabId || !tabs.has(activeTabId)) return '';
     return adblock.extractDomain(tabs.get(activeTabId).url);
@@ -1624,9 +1639,19 @@ function registerIpcHandlers() {
     return store.addBookmark({ title: tab.title, url: tab.url });
   });
 
-  // Downloads data & actions
+  // Downloads data & actions (with CWE-22 / CWE-78 canonical path containment check)
+  function isSafeDownloadPath(targetPath) {
+    if (!targetPath || typeof targetPath !== 'string') return false;
+    if (targetPath.startsWith('\\\\')) return false; // Block UNC paths
+    const resolved = path.resolve(targetPath);
+    const downloadsDir = path.resolve(app.getPath('downloads'));
+    const inDownloadsDir = resolved.toLowerCase().startsWith(downloadsDir.toLowerCase() + path.sep);
+    const inRecordedList = downloads.some(d => d.savePath && path.resolve(d.savePath) === resolved);
+    return (inDownloadsDir || inRecordedList) && fs.existsSync(resolved);
+  }
+
   ipcMain.handle('download:clear-list', () => {
-    let downloads = [];
+    downloads.length = 0;
     return true;
   });
   ipcMain.on('download:open-default-folder', () => {
@@ -1634,10 +1659,10 @@ function registerIpcHandlers() {
   });
   ipcMain.handle('downloads:get', () => downloads);
   ipcMain.on('download:open-file', (e, filePath) => {
-    if (filePath) shell.openPath(filePath);
+    if (isSafeDownloadPath(filePath)) shell.openPath(path.resolve(filePath));
   });
   ipcMain.on('download:show-folder', (e, filePath) => {
-    if (filePath) shell.showItemInFolder(filePath);
+    if (isSafeDownloadPath(filePath)) shell.showItemInFolder(path.resolve(filePath));
   });
 
   // Settings

@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const { app } = require('electron');
+const crypto = require('crypto');
+const { app, safeStorage } = require('electron');
 
 class Store {
   constructor(filename = 'naviddan-data.json') {
@@ -67,9 +68,70 @@ class Store {
       tabHibernationEnabled: true,
       tabHibernationMinutes: 30,
       extensions: [],
-      history: []
+      history: [],
+      vaultPinHash: null,
+      vaultPinSalt: null
     };
     this.data = this.loadData();
+    this.migratePlaintextSecrets();
+  }
+
+  encryptSecret(plainText) {
+    if (!plainText || typeof plainText !== 'string') return '';
+    if (plainText.startsWith('dpapi:')) return plainText;
+    try {
+      if (safeStorage && safeStorage.isEncryptionAvailable()) {
+        const encrypted = safeStorage.encryptString(plainText);
+        return 'dpapi:' + encrypted.toString('base64');
+      }
+    } catch (err) {
+      console.warn('Erreur chiffrement safeStorage:', err.message);
+    }
+    return plainText;
+  }
+
+  decryptSecret(storedValue) {
+    if (!storedValue || typeof storedValue !== 'string') return '';
+    if (!storedValue.startsWith('dpapi:')) return storedValue;
+    try {
+      if (safeStorage && safeStorage.isEncryptionAvailable()) {
+        const buf = Buffer.from(storedValue.slice(6), 'base64');
+        return safeStorage.decryptString(buf);
+      }
+    } catch (err) {
+      console.warn('Erreur déchiffrement safeStorage:', err.message);
+    }
+    return '';
+  }
+
+  migratePlaintextSecrets() {
+    let migrated = false;
+    if (Array.isArray(this.data.passwords)) {
+      for (const item of this.data.passwords) {
+        if (item && item.password && !String(item.password).startsWith('dpapi:')) {
+          const enc = this.encryptSecret(String(item.password));
+          if (enc !== item.password) {
+            item.password = enc;
+            migrated = true;
+          }
+        }
+      }
+    }
+    if (this.data.aiSettings && this.data.aiSettings.apiKeys) {
+      for (const k of Object.keys(this.data.aiSettings.apiKeys)) {
+        const val = this.data.aiSettings.apiKeys[k];
+        if (val && typeof val === 'string' && !val.startsWith('dpapi:')) {
+          const enc = this.encryptSecret(val);
+          if (enc !== val) {
+            this.data.aiSettings.apiKeys[k] = enc;
+            migrated = true;
+          }
+        }
+      }
+    }
+    if (migrated) {
+      this.saveData();
+    }
   }
 
   loadData() {
@@ -93,32 +155,97 @@ class Store {
   }
 
   get(key) {
+    if (key === 'aiSettings' && this.data.aiSettings) {
+      const cloned = JSON.parse(JSON.stringify(this.data.aiSettings));
+      if (cloned.apiKeys) {
+        for (const k of Object.keys(cloned.apiKeys)) {
+          cloned.apiKeys[k] = this.decryptSecret(cloned.apiKeys[k]);
+        }
+      }
+      return cloned;
+    }
     return this.data[key];
   }
 
   set(key, value) {
+    if (key === 'aiSettings' && value && typeof value === 'object') {
+      const cloned = JSON.parse(JSON.stringify(value));
+      if (cloned.apiKeys) {
+        for (const k of Object.keys(cloned.apiKeys)) {
+          if (cloned.apiKeys[k]) {
+            cloned.apiKeys[k] = this.encryptSecret(cloned.apiKeys[k]);
+          }
+        }
+      }
+      this.data[key] = cloned;
+      this.saveData();
+      return;
+    }
     this.data[key] = value;
     this.saveData();
   }
 
-  // --- Passwords ---
+  // --- Vault Master PIN & Passwords ---
+  hasVaultPin() {
+    return Boolean(this.data.vaultPinHash && this.data.vaultPinSalt);
+  }
+
+  setVaultPin(pin) {
+    if (!pin || String(pin).trim() === '') {
+      this.data.vaultPinHash = null;
+      this.data.vaultPinSalt = null;
+      this.saveData();
+      return { hasPin: false };
+    }
+    const cleanPin = String(pin).trim();
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.pbkdf2Sync(cleanPin, salt, 100000, 32, 'sha256').toString('hex');
+    this.data.vaultPinSalt = salt;
+    this.data.vaultPinHash = hash;
+    this.saveData();
+    return { hasPin: true };
+  }
+
+  verifyVaultPin(pin) {
+    if (!this.hasVaultPin()) return true;
+    if (!pin) return false;
+    try {
+      const candidate = crypto.pbkdf2Sync(String(pin).trim(), this.data.vaultPinSalt, 100000, 32, 'sha256');
+      const stored = Buffer.from(this.data.vaultPinHash, 'hex');
+      if (candidate.length !== stored.length) return false;
+      return crypto.timingSafeEqual(candidate, stored);
+    } catch {
+      return false;
+    }
+  }
+
   getPasswords() {
-    return this.data.passwords || [];
+    const rawList = this.data.passwords || [];
+    return rawList.map(item => ({
+      ...item,
+      password: this.decryptSecret(item.password),
+      encrypted: String(item.password || '').startsWith('dpapi:')
+    }));
   }
 
   addPassword(item) {
     if (!this.data.passwords) this.data.passwords = [];
     const id = Date.now().toString();
+    const cleanSite = String(item.site || '').replace(/^https?:\/\//i, '').replace(/\/.*$/, '').toLowerCase();
     const entry = {
       id,
-      site: item.site.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').toLowerCase(),
-      username: item.username,
-      password: item.password,
+      site: cleanSite,
+      username: String(item.username || ''),
+      password: this.encryptSecret(String(item.password || '')),
       createdAt: Date.now()
     };
     this.data.passwords.unshift(entry);
     this.saveData();
-    return entry;
+    return {
+      ...entry,
+      password: String(item.password || ''),
+      encrypted: entry.password.startsWith('dpapi:')
+    };
   }
 
   removePassword(id) {

@@ -1,19 +1,37 @@
 const { app, shell } = require('electron');
 const https = require('https');
-const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { spawn } = require('child_process');
 
 const REPO_OWNER = 'Projet-Independance';
 const REPO_NAME = 'NaviDan';
 const GITHUB_API_URL = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/latest`;
+const ALLOWED_DOWNLOAD_HOSTS = new Set([
+  'github.com',
+  'objects.githubusercontent.com',
+  'release-assets.githubusercontent.com',
+  'codeload.github.com'
+]);
 
 class NaviDanUpdater {
   constructor() {
     this.downloadedFile = null;
+    this.downloadedSha256 = null;
+    this.expectedSha256 = null;
     this.downloadAbortController = null;
     this.isDownloading = false;
+  }
+
+  isAllowedDownloadUrl(rawUrl) {
+    try {
+      const parsed = new URL(rawUrl);
+      if (parsed.protocol !== 'https:') return false;
+      return ALLOWED_DOWNLOAD_HOSTS.has(parsed.hostname.toLowerCase());
+    } catch {
+      return false;
+    }
   }
 
   isNewerVersion(current, latest) {
@@ -39,7 +57,6 @@ class NaviDanUpdater {
       const latestVersion = release.tag_name.replace(/^v/i, '');
       const updateAvailable = this.isNewerVersion(currentVersion, latestVersion);
 
-      // Select matching asset for user platform
       const assets = Array.isArray(release.assets) ? release.assets : [];
       let asset = null;
 
@@ -48,6 +65,12 @@ class NaviDanUpdater {
       } else if (process.platform === 'linux') {
         asset = assets.find(a => /\.AppImage$/i.test(a.name)) || assets.find(a => /\.deb$/i.test(a.name)) || assets.find(a => /\.tar\.gz$/i.test(a.name));
       }
+
+      let sha256 = null;
+      if (asset && typeof asset.digest === 'string' && asset.digest.startsWith('sha256:')) {
+        sha256 = asset.digest.slice(7).toLowerCase();
+      }
+      this.expectedSha256 = sha256;
 
       return {
         updateAvailable,
@@ -60,7 +83,8 @@ class NaviDanUpdater {
         asset: asset ? {
           name: asset.name,
           size: asset.size,
-          downloadUrl: asset.browser_download_url
+          downloadUrl: asset.browser_download_url,
+          sha256
         } : null
       };
     } catch (err) {
@@ -111,8 +135,13 @@ class NaviDanUpdater {
       return Promise.reject(new Error('Téléchargement déjà en cours'));
     }
 
+    if (!this.isAllowedDownloadUrl(downloadUrl)) {
+      return Promise.reject(new Error('URL de mise à jour non autorisée (HTTPS GitHub requis)'));
+    }
+
     this.isDownloading = true;
-    const destPath = path.join(app.getPath('temp'), assetName || 'NaviDan-Update-Setup.exe');
+    const safeAssetName = path.basename(String(assetName || 'NaviDan-Update-Setup.exe')).replace(/[^a-zA-Z0-9._ -]/g, '_');
+    const destPath = path.join(app.getPath('temp'), safeAssetName);
 
     return new Promise((resolve, reject) => {
       const downloadFile = (currentUrl, redirects = 5) => {
@@ -121,8 +150,12 @@ class NaviDanUpdater {
           return reject(new Error('Trop de redirections'));
         }
 
-        const client = currentUrl.startsWith('https') ? https : http;
-        const req = client.get(currentUrl, {
+        if (!this.isAllowedDownloadUrl(currentUrl)) {
+          this.isDownloading = false;
+          return reject(new Error('Redirection vers un hôte non autorisé bloquée'));
+        }
+
+        const req = https.get(currentUrl, {
           headers: {
             'User-Agent': 'NaviDan-Browser-Updater'
           }
@@ -138,9 +171,11 @@ class NaviDanUpdater {
 
           const totalBytes = parseInt(res.headers['content-length'] || '0', 10);
           let transferredBytes = 0;
+          const hasher = crypto.createHash('sha256');
           const fileStream = fs.createWriteStream(destPath);
 
           res.on('data', (chunk) => {
+            hasher.update(chunk);
             transferredBytes += chunk.length;
             if (totalBytes > 0 && typeof onProgress === 'function') {
               const percent = Math.min(100, Math.round((transferredBytes / totalBytes) * 100));
@@ -157,7 +192,13 @@ class NaviDanUpdater {
           fileStream.on('finish', () => {
             fileStream.close(() => {
               this.isDownloading = false;
+              const computedHash = hasher.digest('hex').toLowerCase();
+              if (this.expectedSha256 && computedHash !== this.expectedSha256.toLowerCase()) {
+                fs.unlink(destPath, () => {});
+                return reject(new Error('Échec de vérification d\'intégrité SHA-256 du binaire téléchargé'));
+              }
               this.downloadedFile = destPath;
+              this.downloadedSha256 = computedHash;
               resolve(destPath);
             });
           });
@@ -179,29 +220,36 @@ class NaviDanUpdater {
     });
   }
 
-  installAndRestart(customFilePath = null) {
-    const targetFile = customFilePath || this.downloadedFile;
+  installAndRestart() {
+    const targetFile = this.downloadedFile;
     if (!targetFile || !fs.existsSync(targetFile)) {
       throw new Error('Fichier d\'installation introuvable');
     }
 
+    const resolvedTarget = path.resolve(targetFile);
+    const tempDir = path.resolve(app.getPath('temp'));
+    if (!resolvedTarget.toLowerCase().startsWith(tempDir.toLowerCase() + path.sep)) {
+      throw new Error('Chemin d\'exécutable hors du dossier temporaire sécurisé');
+    }
+
     if (process.platform === 'win32') {
       try {
-        const installerProcess = spawn(targetFile, [], {
+        const installerProcess = spawn(resolvedTarget, [], {
           detached: true,
           stdio: 'ignore'
         });
         installerProcess.unref();
       } catch (err) {
-        shell.openPath(targetFile);
+        shell.openPath(resolvedTarget);
       }
     } else {
-      shell.openPath(targetFile);
+      shell.openPath(resolvedTarget);
     }
 
     setTimeout(() => {
       app.quit();
-    }, 500);
+    }, 600);
+
     return true;
   }
 }

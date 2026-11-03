@@ -1485,9 +1485,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
 
-    // Code blocks with copy button
+    // Code blocks with copy button (CSP-safe event delegation)
     escaped = escaped.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (match, lang, code) => {
-      return `<pre><button class="code-copy-btn" onclick="navigator.clipboard.writeText(this.nextElementSibling.innerText);this.textContent='Copié !';setTimeout(()=>this.textContent='Copier',1500)">Copier</button><code>${code.trim()}</code></pre>`;
+      return `<pre><button class="code-copy-btn" type="button">Copier</button><code>${code.trim()}</code></pre>`;
     });
 
     // Inline code
@@ -1504,6 +1504,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     return escaped;
   }
+
+  naviaiMessages?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.code-copy-btn');
+    if (btn && btn.nextElementSibling) {
+      navigator.clipboard.writeText(btn.nextElementSibling.innerText || '');
+      btn.textContent = 'Copié !';
+      setTimeout(() => { btn.textContent = 'Copier'; }, 1500);
+    }
+  });
 
   // Send Prompt to NaviAI
   async function submitNaviAIPrompt(promptText, extraContext = null) {
