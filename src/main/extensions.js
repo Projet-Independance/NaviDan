@@ -478,10 +478,7 @@ try {
               if (fs.existsSync(fullScriptPath)) {
                 let code = fs.readFileSync(fullScriptPath, 'utf8');
                 code = code.replace(/chrome\.extension\.isAllowedFileSchemeAccess\s*\(\s*([^)]+)\s*\)/g, (_, fn) => `${fn}(true)`);
-                code = code.replace(/(async\s+)?function\s+getFontList\(\)\s*\{[\s\S]*?return\s+new\s+Promise[\s\S]*?\}\s*\}\s*\);?\s*(\}\s*\);)?\s*\}/g,
-                  'async function getFontList() { return ["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui"]; }');
-                code = code.replace(/async\s+function\s+getFontList\(\)\s*\{\s*return\s+\[[^\]]*\];\s*\}\s*\);\s*\}/g,
-                  'async function getFontList() { return ["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui"]; }');
+                code = code.replace(/async\s+function\s+getFontList\(\)\s*\{[\s\S]*?const\s+fonts\s*=\s*list\.map[\s\S]*?\}\s*\);\s*\}\s*\);\s*\}/g, 'async function getFontList() { return ["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui"]; }');
                 code = code.replace(/\(\{data,\s*error\}\)\s*=>\s*\{/g, '(res) => { const {data, error} = res || {};');
                 if (code.includes('/* NAVI_SHIM_START */')) {
                   code = code.replace(/\/\* NAVI_SHIM_START \*\/[\s\S]*?\/\* NAVI_SHIM_END \*\/\s*/, polyfillCode + '\n');
