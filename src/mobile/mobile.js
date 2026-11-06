@@ -111,7 +111,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- URL Parser ---
   function formatSearchUrl(input) {
     const trimmed = String(input || '').trim();
-    if (!trimmed) return 'navidan://newtab';
+    if (!trimmed || trimmed === 'navidan://newtab' || trimmed.startsWith('navidan://') || trimmed.startsWith('about:')) {
+      return 'navidan://newtab';
+    }
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
       return trimmed;
     }
