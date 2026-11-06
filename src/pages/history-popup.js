@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     historyListEl.innerHTML = '';
 
     const filtered = filter 
-      ? list.filter(h => h.title.toLowerCase().includes(filter.toLowerCase()) || h.url.toLowerCase().includes(filter.toLowerCase()))
+      ? list.filter(h => (h.title && h.title.toLowerCase().includes(filter.toLowerCase())) || (h.url && h.url.toLowerCase().includes(filter.toLowerCase())))
       : list;
 
     if (!filtered || filtered.length === 0) {
@@ -25,17 +25,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     filtered.forEach(item => {
       const row = document.createElement('div');
       row.className = 'list-item';
-      const timeStr = new Date(item.visitedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      const timeStr = item.visitedAt ? new Date(item.visitedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
       
       row.innerHTML = `
         <div class="item-left">
-          <span class="item-title" title="${item.title}">${item.title}</span>
+          <span class="item-title" title="${item.title || item.url}">${item.title || item.url}</span>
           <span class="item-url">${item.url}</span>
         </div>
-        <span class="item-time">${timeStr}</span>
+        ${timeStr ? `<span class="item-time">${timeStr}</span>` : ''}
+        <button class="delete-btn-sm" title="Supprimer">✕</button>
       `;
 
-      row.addEventListener('click', () => {
+      row.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('delete-btn-sm')) {
+          e.stopPropagation();
+          await window.historyApi.removeHistory(item.id || item.url);
+          renderHistory(searchInput.value.trim());
+          return;
+        }
         window.historyApi.navigateTo(item.url, true);
       });
 
@@ -53,13 +60,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderHistory(searchInput.value.trim());
   });
 
-  btnClearHistory.addEventListener('click', async () => {
-    if (confirm("Effacer tout l'historique de navigation ?")) {
+  let confirmTimeout = null;
+  btnClearHistory?.addEventListener('click', async () => {
+    if (btnClearHistory.dataset.confirming === 'true') {
+      clearTimeout(confirmTimeout);
+      btnClearHistory.dataset.confirming = 'false';
+      btnClearHistory.classList.remove('confirming');
+      btnClearHistory.disabled = true;
+      btnClearHistory.textContent = '...';
       await window.historyApi.clearHistory();
-      renderHistory();
+      btnClearHistory.disabled = false;
+      btnClearHistory.textContent = 'Effacer tout';
+      await renderHistory();
+      return;
     }
+
+    btnClearHistory.dataset.confirming = 'true';
+    btnClearHistory.classList.add('confirming');
+    btnClearHistory.textContent = 'Confirmer ?';
+
+    confirmTimeout = setTimeout(() => {
+      btnClearHistory.dataset.confirming = 'false';
+      btnClearHistory.classList.remove('confirming');
+      btnClearHistory.textContent = 'Effacer tout';
+    }, 3500);
   });
 
   await renderHistory();
 });
-

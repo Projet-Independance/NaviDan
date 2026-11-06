@@ -527,6 +527,14 @@ function createTab(initialUrl = null, isIncognito = false, targetWin = null) {
     }
   });
 
+  // Silence expected network errors (e.g. adblock ERR_BLOCKED_BY_CLIENT)
+  wc.on('did-fail-load', (event, errorCode, errorDescription) => {
+    if (errorCode === -20 || errorDescription === 'ERR_BLOCKED_BY_CLIENT' || errorCode === -3) {
+      // Intentionally blocked or aborted, do not propagate as unhandled error
+      return;
+    }
+  });
+
   // Load URL
   view.webContents.loadURL(urlToLoad).catch(() => {});
 
@@ -1554,6 +1562,21 @@ function registerIpcHandlers() {
   ipcMain.handle('history:get', () => store.getHistory());
   ipcMain.handle('history:clear', () => {
     store.clearHistory();
+    for (const tab of tabs.values()) {
+      if (tab.view && !tab.view.webContents.isDestroyed()) {
+        try {
+          if (tab.view.webContents.navigationHistory && typeof tab.view.webContents.navigationHistory.clear === 'function') {
+            tab.view.webContents.navigationHistory.clear();
+          } else if (typeof tab.view.webContents.clearHistory === 'function') {
+            tab.view.webContents.clearHistory();
+          }
+        } catch {}
+      }
+    }
+    return true;
+  });
+  ipcMain.handle('history:remove', (e, id) => {
+    store.removeHistory(id);
     return true;
   });
 
@@ -1788,8 +1811,8 @@ function registerIpcHandlers() {
     toggleAnchoredPopup('passwords', coords, 360, 520, '../pages/passwords-popup.html', '../preload/passwords-preload.js', BrowserWindow.fromWebContents(e.sender));
   });
   ipcMain.on('passwords:close', () => closeAllPopups());
-  ipcMain.handle('passwords:get', () => store.getPasswords());
-  ipcMain.handle('passwords:add', (e, item) => store.addPassword(item));
+  ipcMain.handle('passwords:get', async () => await store.getPasswords());
+  ipcMain.handle('passwords:add', async (e, item) => await store.addPassword(item));
   ipcMain.handle('passwords:remove', (e, id) => store.removePassword(id));
   ipcMain.handle('passwords:has-pin', () => store.hasVaultPin());
   ipcMain.handle('passwords:set-pin', (e, pin) => store.setVaultPin(pin));
@@ -1868,6 +1891,13 @@ function registerIpcHandlers() {
     const updated = store.updateSettings(newSettings);
     if ('showBookmarksBar' in newSettings) {
       updateActiveViewBounds();
+    }
+    if (newSettings.theme) {
+      const preset = (newSettings.theme === 'dark') ? 'cyber-dark' : newSettings.theme;
+      const themeUpdated = store.updateThemeSettings({ preset });
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('theme:changed', themeUpdated);
+      }
     }
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('settings:updated', updated);
@@ -2448,10 +2478,11 @@ function registerIpcHandlers() {
 }
 
 // App lifecycle
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   app.setName('NaviDan');
   app.setAppUserModelId?.('com.navidan.browser');
   store = new Store();
+  await store.loadDecryptedSecrets();
   currentActiveWorkspaceId = store.getActiveWorkspaceId() || 'gaming';
   naviAIService = new NaviAIService(store);
   const aiConf = naviAIService.getSettings();

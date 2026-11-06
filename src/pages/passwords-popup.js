@@ -289,10 +289,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       btnDel.addEventListener('click', async (e) => {
         e.stopPropagation();
         requireUnlocked(async () => {
-          if (confirm(`Supprimer l'identifiant pour ${item.site} ?`)) {
+          if (btnDel.dataset.confirming === 'true') {
             await window.passwordsApi.removePassword(item.id);
             renderPasswords(searchInput.value.trim());
+            return;
           }
+          btnDel.dataset.confirming = 'true';
+          btnDel.textContent = 'Confirmer ?';
+          btnDel.classList.add('confirming');
+          setTimeout(() => {
+            btnDel.dataset.confirming = 'false';
+            btnDel.textContent = '🗑️';
+            btnDel.classList.remove('confirming');
+          }, 3000);
         });
       });
 

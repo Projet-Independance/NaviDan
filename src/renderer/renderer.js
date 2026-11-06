@@ -1319,7 +1319,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function applyTheme(theme) {
-    document.body.className = theme === 'light' ? 'theme-light' : 'theme-dark';
+    const preset = (theme === 'dark') ? 'cyber-dark' : (theme || 'cyber-dark');
+    if (preset === 'light') {
+      document.body.className = 'theme-light';
+    } else {
+      document.body.className = `theme-dark theme-${preset}`;
+    }
   }
 
   async function refreshBookmarksBar() {

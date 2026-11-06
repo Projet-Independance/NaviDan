@@ -72,17 +72,37 @@ class Store {
       vaultPinHash: null,
       vaultPinSalt: null
     };
+    this._cachedApiKeys = {};
     this.data = this.loadData();
-    this.migratePlaintextSecrets();
   }
 
-  encryptSecret(plainText) {
+  async isEncryptionReady() {
+    if (!safeStorage) return false;
+    if (typeof safeStorage.isAsyncEncryptionAvailable === 'function') {
+      try {
+        return await safeStorage.isAsyncEncryptionAvailable();
+      } catch {
+        return false;
+      }
+    }
+    return typeof safeStorage.isEncryptionAvailable === 'function' ? safeStorage.isEncryptionAvailable() : false;
+  }
+
+  async encryptSecret(plainText) {
     if (!plainText || typeof plainText !== 'string') return '';
     if (plainText.startsWith('dpapi:')) return plainText;
     try {
-      if (safeStorage && safeStorage.isEncryptionAvailable()) {
-        const encrypted = safeStorage.encryptString(plainText);
-        return 'dpapi:' + encrypted.toString('base64');
+      const ready = await this.isEncryptionReady();
+      if (ready) {
+        let encrypted;
+        if (typeof safeStorage.encryptStringAsync === 'function') {
+          encrypted = await safeStorage.encryptStringAsync(plainText);
+        } else if (typeof safeStorage.encryptString === 'function') {
+          encrypted = safeStorage.encryptString(plainText);
+        }
+        if (encrypted) {
+          return 'dpapi:' + encrypted.toString('base64');
+        }
       }
     } catch (err) {
       console.warn('Erreur chiffrement safeStorage:', err.message);
@@ -90,13 +110,19 @@ class Store {
     return plainText;
   }
 
-  decryptSecret(storedValue) {
+  async decryptSecret(storedValue) {
     if (!storedValue || typeof storedValue !== 'string') return '';
     if (!storedValue.startsWith('dpapi:')) return storedValue;
     try {
-      if (safeStorage && safeStorage.isEncryptionAvailable()) {
+      const ready = await this.isEncryptionReady();
+      if (ready) {
         const buf = Buffer.from(storedValue.slice(6), 'base64');
-        return safeStorage.decryptString(buf);
+        if (typeof safeStorage.decryptStringAsync === 'function') {
+          const res = await safeStorage.decryptStringAsync(buf);
+          return (res && typeof res === 'object' && 'result' in res) ? res.result : String(res || '');
+        } else if (typeof safeStorage.decryptString === 'function') {
+          return safeStorage.decryptString(buf);
+        }
       }
     } catch (err) {
       console.warn('Erreur déchiffrement safeStorage:', err.message);
@@ -104,12 +130,28 @@ class Store {
     return '';
   }
 
-  migratePlaintextSecrets() {
+  async loadDecryptedSecrets() {
+    if (this.data.aiSettings && this.data.aiSettings.apiKeys) {
+      for (const k of Object.keys(this.data.aiSettings.apiKeys)) {
+        const val = this.data.aiSettings.apiKeys[k];
+        if (val && typeof val === 'string') {
+          if (val.startsWith('dpapi:')) {
+            this._cachedApiKeys[k] = await this.decryptSecret(val);
+          } else {
+            this._cachedApiKeys[k] = val;
+          }
+        }
+      }
+    }
+    await this.migratePlaintextSecrets();
+  }
+
+  async migratePlaintextSecrets() {
     let migrated = false;
     if (Array.isArray(this.data.passwords)) {
       for (const item of this.data.passwords) {
         if (item && item.password && !String(item.password).startsWith('dpapi:')) {
-          const enc = this.encryptSecret(String(item.password));
+          const enc = await this.encryptSecret(String(item.password));
           if (enc !== item.password) {
             item.password = enc;
             migrated = true;
@@ -121,7 +163,7 @@ class Store {
       for (const k of Object.keys(this.data.aiSettings.apiKeys)) {
         const val = this.data.aiSettings.apiKeys[k];
         if (val && typeof val === 'string' && !val.startsWith('dpapi:')) {
-          const enc = this.encryptSecret(val);
+          const enc = await this.encryptSecret(val);
           if (enc !== val) {
             this.data.aiSettings.apiKeys[k] = enc;
             migrated = true;
@@ -159,7 +201,11 @@ class Store {
       const cloned = JSON.parse(JSON.stringify(this.data.aiSettings));
       if (cloned.apiKeys) {
         for (const k of Object.keys(cloned.apiKeys)) {
-          cloned.apiKeys[k] = this.decryptSecret(cloned.apiKeys[k]);
+          if (this._cachedApiKeys && this._cachedApiKeys[k] !== undefined) {
+            cloned.apiKeys[k] = this._cachedApiKeys[k];
+          } else if (String(cloned.apiKeys[k]).startsWith('dpapi:')) {
+            cloned.apiKeys[k] = '';
+          }
         }
       }
       return cloned;
@@ -172,13 +218,15 @@ class Store {
       const cloned = JSON.parse(JSON.stringify(value));
       if (cloned.apiKeys) {
         for (const k of Object.keys(cloned.apiKeys)) {
-          if (cloned.apiKeys[k]) {
-            cloned.apiKeys[k] = this.encryptSecret(cloned.apiKeys[k]);
+          const raw = cloned.apiKeys[k];
+          if (raw && typeof raw === 'string') {
+            this._cachedApiKeys[k] = raw;
           }
         }
       }
       this.data[key] = cloned;
       this.saveData();
+      this.migratePlaintextSecrets().catch(() => {});
       return;
     }
     this.data[key] = value;
@@ -219,24 +267,25 @@ class Store {
     }
   }
 
-  getPasswords() {
+  async getPasswords() {
     const rawList = this.data.passwords || [];
-    return rawList.map(item => ({
+    return Promise.all(rawList.map(async item => ({
       ...item,
-      password: this.decryptSecret(item.password),
+      password: await this.decryptSecret(item.password),
       encrypted: String(item.password || '').startsWith('dpapi:')
-    }));
+    })));
   }
 
-  addPassword(item) {
+  async addPassword(item) {
     if (!this.data.passwords) this.data.passwords = [];
     const id = Date.now().toString();
     const cleanSite = String(item.site || '').replace(/^https?:\/\//i, '').replace(/\/.*$/, '').toLowerCase();
+    const encryptedPassword = await this.encryptSecret(String(item.password || ''));
     const entry = {
       id,
       site: cleanSite,
       username: String(item.username || ''),
-      password: this.encryptSecret(String(item.password || '')),
+      password: encryptedPassword,
       createdAt: Date.now()
     };
     this.data.passwords.unshift(entry);
@@ -324,6 +373,12 @@ class Store {
 
   clearHistory() {
     this.data.history = [];
+    this.saveData();
+  }
+
+  removeHistory(id) {
+    if (!this.data.history) return;
+    this.data.history = this.data.history.filter(h => h.id !== id && h.url !== id);
     this.saveData();
   }
 

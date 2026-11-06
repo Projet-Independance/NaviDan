@@ -110,6 +110,12 @@ body.no-arrow .arrow-up {
   color: #ffffff;
 }
 
+.icon-btn-danger.confirming {
+  background: #da3633;
+  border-color: #f85149;
+  color: #ffffff;
+}
+
 /* Barre de recherche compacte */
 .search-bar-row {
   padding: 8px 12px 4px 12px;
@@ -298,6 +304,11 @@ body.no-arrow .arrow-up {
   font-size: 11px;
   outline: none;
   cursor: pointer;
+}
+
+.setting-select-control option {
+  background: #161b22;
+  color: #f0f6fc;
 }
 
 .setting-select-control:focus {

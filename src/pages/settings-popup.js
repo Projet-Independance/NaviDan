@@ -14,7 +14,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.NaviI18n.applyToDOM(document, currentLang);
   }
 
-  if (settingTheme) settingTheme.value = currentSettings.theme || 'dark';
+  if (settingTheme) {
+    const activeTheme = currentSettings.theme === 'dark' ? 'cyber-dark' : (currentSettings.theme || 'cyber-dark');
+    settingTheme.value = activeTheme;
+    if (!settingTheme.value) {
+      settingTheme.value = 'cyber-dark';
+    }
+  }
   if (settingEngine) settingEngine.value = currentSettings.searchEngine || 'google';
   if (settingAdblock) settingAdblock.checked = currentSettings.adblockEnabled !== false;
   if (settingBookmarksBar) settingBookmarksBar.checked = currentSettings.showBookmarksBar !== false;
