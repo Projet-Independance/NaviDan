@@ -13,6 +13,12 @@ dist/
 dist-mobile/
 build/
 out/
+release-apk/
+release-assets/
+android/app/build/
+android/.gradle/
+*.apk
+*.aab
 
 # Environment and sensitive files
 .env

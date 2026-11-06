@@ -26,8 +26,10 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Build Windows Binaries
-        run: npm run build:win
+      - name: Build Windows Binaries & Store Appx
+        run: |
+          npm run build:win
+          npm run build:store
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
@@ -35,6 +37,7 @@ jobs:
           name: NaviDan-Windows
           path: |
             dist/*.exe
+            dist/*.appx
             dist/*.blockmap
           retention-days: 7
 

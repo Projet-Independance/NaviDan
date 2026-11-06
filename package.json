@@ -1,6 +1,6 @@
 {
   "name": "navidan",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Navigateur Web moderne, rapide et sécurisé développé sur mesure",
   "main": "src/main/main.js",
   "scripts": {
