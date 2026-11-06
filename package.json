@@ -48,9 +48,9 @@
     },
     "appx": {
       "applicationId": "NaviDan",
-      "identityName": "ProjetIndependance.NaviDan",
-      "publisher": "CN=Projet-Independance",
-      "publisherDisplayName": "Projet-Independance",
+      "identityName": "PandoraEI.NaviDan",
+      "publisher": "CN=6970AE15-6ECE-47A0-BFF3-0F9DC18F0953",
+      "publisherDisplayName": "PandoraEI",
       "backgroundColor": "#0d1117"
     },
     "files": [
