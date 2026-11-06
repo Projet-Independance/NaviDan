@@ -1553,9 +1553,22 @@ function registerIpcHandlers() {
   });
 
   // Bookmarks
+  function notifyBookmarksChanged() {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('bookmarks:updated');
+    }
+  }
   ipcMain.handle('bookmarks:get', () => store.getBookmarks());
-  ipcMain.handle('bookmarks:add', (e, item) => store.addBookmark(item));
-  ipcMain.handle('bookmarks:remove', (e, url) => store.removeBookmark(url));
+  ipcMain.handle('bookmarks:add', (e, item) => {
+    const res = store.addBookmark(item);
+    notifyBookmarksChanged();
+    return res;
+  });
+  ipcMain.handle('bookmarks:remove', (e, url) => {
+    const res = store.removeBookmark(url);
+    notifyBookmarksChanged();
+    return res;
+  });
   ipcMain.handle('bookmarks:is', (e, url) => store.isBookmarked(url));
 
   // History
@@ -1856,7 +1869,9 @@ function registerIpcHandlers() {
     if (!activeTabId || !tabs.has(activeTabId)) return null;
     const tab = tabs.get(activeTabId);
     if (!tab.url || tab.url.startsWith('file:') || tab.url.startsWith('naviddan://')) return null;
-    return store.addBookmark({ title: tab.title, url: tab.url });
+    const res = store.addBookmark({ title: tab.title, url: tab.url });
+    notifyBookmarksChanged();
+    return res;
   });
 
   // Downloads data & actions (with CWE-22 / CWE-78 canonical path containment check)

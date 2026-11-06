@@ -54,6 +54,7 @@ const naviDanApi = {
   addBookmark: (item) => ipcRenderer.invoke('bookmarks:add', item),
   removeBookmark: (url) => ipcRenderer.invoke('bookmarks:remove', url),
   isBookmarked: (url) => ipcRenderer.invoke('bookmarks:is', url),
+  onBookmarksUpdated: (callback) => ipcRenderer.on('bookmarks:updated', () => callback()),
 
   getHistory: () => ipcRenderer.invoke('history:get'),
   clearHistory: () => ipcRenderer.invoke('history:clear'),

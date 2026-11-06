@@ -40,16 +40,8 @@ class Store {
         networkLimitEnabled: false,
         networkLimitSpeed: '50 MB/s'
       },
-      passwords: [
-        { id: '1', site: 'google.com', username: 'moncompte@gmail.com', password: 'ExempleMotDePasse123!', createdAt: Date.now() - 86400000 }
-      ],
-      bookmarks: [
-        { id: '1', title: 'Google', url: 'https://www.google.com' },
-        { id: '2', title: 'YouTube', url: 'https://www.youtube.com' },
-        { id: '3', title: 'GitHub', url: 'https://github.com' },
-        { id: '4', title: 'Wikipedia', url: 'https://fr.wikipedia.org' },
-        { id: '5', title: 'Reddit', url: 'https://www.reddit.com' }
-      ],
+      passwords: [],
+      bookmarks: [],
       speedDial: [
         { id: '1', title: 'Google', url: 'https://www.google.com', icon: '🔍' },
         { id: '2', title: 'YouTube', url: 'https://www.youtube.com', icon: '▶' },

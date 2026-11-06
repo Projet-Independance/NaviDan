@@ -15,3 +15,4 @@ child.on('close', (code) => {
   console.log('Finished with code:', code);
   process.exit(code || 0);
 });
+

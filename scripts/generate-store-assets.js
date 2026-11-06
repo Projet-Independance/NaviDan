@@ -426,3 +426,4 @@ app.whenReady().then(async () => {
   console.log('--- ALL STORE ASSETS GENERATED SUCCESSFULLY ---');
   app.quit();
 });
+

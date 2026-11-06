@@ -45,5 +45,5 @@ L'application sollicite uniquement les droits nécessaires à son fonctionnement
 ### 6. Contact
 Éditeur : **PandoraEI**  
 Dépôt et code source : https://github.com/Projet-Independance/NaviDan  
-Support : contact@navidan.browser
+Support : pandora.ei.pro@gmail.com
 

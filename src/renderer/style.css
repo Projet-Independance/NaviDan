@@ -520,6 +520,10 @@ body {
   color: #fbbf24;
 }
 
+.omnibox-action-btn.active svg {
+  fill: #fbbf24;
+}
+
 .pip-omnibox-btn {
   color: var(--accent-color);
   animation: pip-pulse 2s infinite ease-in-out;

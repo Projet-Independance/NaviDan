@@ -174,6 +174,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Load Bookmarks Bar
   refreshBookmarksBar();
+  window.naviddan?.onBookmarksUpdated?.(() => {
+    refreshBookmarksBar();
+    const cur = currentTabs.find(t => t.id === activeTabId);
+    if (cur) updateNavbarState(cur);
+  });
 
   // Sidebar initialization
   if (window.naviddan.getSidebarState) {
@@ -370,14 +375,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Bookmark Star in Omnibox
   btnStarBookmark?.addEventListener('click', async () => {
     const activeTab = currentTabs.find(t => t.id === activeTabId);
-    if (!activeTab || !activeTab.url || activeTab.url.startsWith('naviddan://')) return;
+    if (!activeTab || !activeTab.url || activeTab.url.startsWith('naviddan://') || activeTab.url.includes('newtab.html')) {
+      alert("Naviguez d'abord sur un site web (ex: https://...) pour l'ajouter aux favoris.");
+      return;
+    }
 
     const isFav = await window.naviddan.isBookmarked(activeTab.url);
     if (isFav) {
       await window.naviddan.removeBookmark(activeTab.url);
       btnStarBookmark.classList.remove('active');
     } else {
-      await window.naviddan.addBookmark({ title: activeTab.title, url: activeTab.url });
+      await window.naviddan.addBookmark({ title: activeTab.title || activeTab.url, url: activeTab.url });
       btnStarBookmark.classList.add('active');
     }
     refreshBookmarksBar();
@@ -1354,6 +1362,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       a.addEventListener('auxclick', (e) => {
         if (e.button === 1) { // Middle click (wheel)
           window.naviddan.createTab(bm.url);
+        }
+      });
+
+      a.addEventListener('contextmenu', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (confirm(`Supprimer le favori "${bm.title}" ?`)) {
+          await window.naviddan.removeBookmark(bm.url);
+          refreshBookmarksBar();
+          const cur = currentTabs.find(t => t.id === activeTabId);
+          if (cur && cur.url === bm.url) {
+            btnStarBookmark?.classList.remove('active');
+          }
         }
       });
 
