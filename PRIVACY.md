@@ -2,47 +2,48 @@
 
 Dernière mise à jour : 6 novembre 2026
 
-Le respect de votre vie privée et la sécurité de vos données personnelles sont au cœur de la conception de **NaviDan** (« l'Application »), développé par **Projet-Independance**.
+Le respect de votre vie privée et la sécurité de vos données personnelles sont au cœur de la conception de **NaviDan** (« l'Application »), développé et édité par **PandoraEI** (Projet-Independance).
 
 ---
 
-### 1. Données collectées et Télémétrie
-NaviDan est un navigateur orienté vers la souveraineté numérique et la confidentialité :
-- **Aucune télémétrie** : NaviDan ne collecte, n'enregistre et ne transmet aucune donnée d'utilisation, statistique ou métrique de navigation vers des serveurs tiers ou vers Projet-Independance.
-- **Aucun profilage** : Vos habitudes de navigation, requêtes de recherche et sites visités restent strictement privés.
+### 1. Collecte de données et Télémétrie
+NaviDan est un navigateur web axé sur la confidentialité et la souveraineté numérique :
+- **Zéro télémétrie** : NaviDan ne collecte, n'enregistre, ne profile et ne transmet aucune donnée d'activité, historique de navigation, adresse IP, requête de recherche ou statistique vers des serveurs tiers ou vers PandoraEI.
+- **Aucune monétisation de données** : Aucune donnée utilisateur n'est vendue, partagée ou exploitée à des fins publicitaires.
 
 ---
 
-### 2. Stockage Local des Données
-Toutes les données de session sont conservées **exclusivement en local sur votre appareil** :
-- **Historique et Favoris** : Enregistrés localement dans le dossier de données de l'application (`AppData` sur Windows, `~/.config` sur Linux).
-- **Mots de passe** : Chiffrés localement à l'aide des mécanismes cryptographiques du système d'exploitation (**Windows DPAPI** via `safeStorage` et hash salé pour le code PIN maître).
-- **Suppression intégrale** : Vous pouvez à tout moment effacer l'historique, les cookies, le cache et les mots de passe via les outils intégrés (Gestionnaire de nettoyage et paramètres).
+### 2. Stockage et Sécurité Locale
+Toutes vos données restent hébergées localement sur votre équipement :
+- **Historique, Favoris et Cookies** : Stockés exclusivement sur votre appareil (`%APPDATA%` sur Windows).
+- **Mots de passe et Identifiants** : Chiffrés au repos à l'aide des API de protection cryptographique du système d'exploitation (**Windows DPAPI** via l'API Electron `safeStorage`).
+- **Contrôle absolu** : Vous pouvez purger l'intégralité des données locales à tout moment via les paramètres du navigateur.
 
 ---
 
-### 3. Filtrage des Contenus et Bouclier Anti-Pub
-Le bouclier de protection bloque les publicités intrusives, scripts de minage et traqueurs tiers :
-- Les listes de blocage sont traitées **localement** dans le moteur de l'application via les API réseau de Chromium/Electron.
-- Aucune URL consultée n'est envoyée à un serveur d'analyse externe.
+### 3. Protection et Blocage de Contenus
+Le bouclier intégré neutralise publicités invasives et traqueurs :
+- Le filtrage s'exécute **intégralement en local** sur votre machine.
+- Aucune URL visitée n'est envoyée à des tiers pour vérification ou analyse.
 
 ---
 
-### 4. Assistant Intelligent NaviAI
-Si vous utilisez les fonctionnalités d'assistance NaviAI :
-- Les échanges textuels sont envoyés **directement** au fournisseur d'IA sélectionné (Google Gemini, Groq, OpenAI ou votre instance Ollama locale).
-- Vos clés d'API personnelles sont chiffrées localement et ne transitent par aucun serveur intermédiaire opéré par Projet-Independance.
+### 4. Fonctions d'IA (NaviAI)
+Si vous activez le module optionnel NaviAI :
+- Les échanges sont transmis de manière chiffrée directement au fournisseur de modèle choisi (Gemini, Groq, OpenAI ou instance locale Ollama).
+- Vos clés d'API personnelles sont chiffrées localement et ne transitent par aucun serveur intermédiaire détenu par PandoraEI.
 
 ---
 
-### 5. Permissions Requises
-L'Application requiert les autorisations techniques standards nécessaires à tout navigateur web :
-- **Accès réseau / Internet** : Charger les pages web demandées par l'utilisateur.
-- **Accès au stockage local** : Télécharger des fichiers choisis par l'utilisateur et persister les préférences locales.
+### 5. Autorisations Techniques
+L'application sollicite uniquement les droits nécessaires à son fonctionnement de navigateur :
+- **Connexion Internet** : Charger les sites consultés à votre demande.
+- **Accès au disque** : Sauvegarder les fichiers téléchargés par vos soins.
 
 ---
 
 ### 6. Contact
-Pour toute question relative à cette politique de confidentialité :
-- **Dépôt officiel** : https://github.com/Projet-Independance/NaviDan
-- **Courriel** : contact@navidan.browser
+Éditeur : **PandoraEI**  
+Dépôt et code source : https://github.com/Projet-Independance/NaviDan  
+Support : contact@navidan.browser
+
