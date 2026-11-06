@@ -1,0 +1,16 @@
+{
+  "appId": "com.navidan.browser",
+  "appName": "NaviDan",
+  "webDir": "dist-mobile",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  }
+}
+

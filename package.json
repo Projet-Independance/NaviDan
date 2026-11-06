@@ -7,7 +7,10 @@
     "start": "node start.js",
     "build:linux": "npx electron-builder --linux tar.gz",
     "build:linux:all": "npx electron-builder --linux AppImage deb tar.gz",
-    "build:win": "npx electron-builder --win portable nsis"
+    "build:win": "npx electron-builder --win portable nsis",
+    "build:mobile": "node scripts/build-mobile.js",
+    "cap:sync": "npm run build:mobile && npx cap sync android",
+    "cap:build": "npm run cap:sync && cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
     "adm-zip": "^0.5.16"
@@ -62,6 +65,9 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/cli": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
     "electron": "45.2.1"
   }
 }

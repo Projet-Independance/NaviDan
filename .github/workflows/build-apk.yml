@@ -1,0 +1,70 @@
+name: Build NaviDan Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Setup Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Node Dependencies
+        run: npm install
+
+      - name: Build Mobile Web Assets
+        run: npm run build:mobile
+
+      - name: Sync Capacitor Android
+        run: npx cap sync android
+
+      - name: Make Gradlew Executable
+        run: chmod +x android/gradlew
+
+      - name: Build Debug APK with Gradle
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Prepare APK Output
+        run: |
+          mkdir -p release-apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk release-apk/NaviDan.apk
+          echo "APK successfully built: release-apk/NaviDan.apk"
+
+      - name: Upload APK as Workflow Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NaviDan-Android-APK
+          path: release-apk/NaviDan.apk
+          retention-days: 30
+
+      - name: Release APK Asset (On Version Tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-apk/NaviDan.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

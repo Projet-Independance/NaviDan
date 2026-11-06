@@ -98,3 +98,22 @@ Un navigateur web de bureau moderne, ultra-rapide et personnalisable, propulsé 
 cd D:\application\NaviDdan
 npm start
 ```
+
+---
+
+## 📱 Version Android (APK)
+
+NaviDan dispose d'une version mobile Android propulsée par Capacitor et le moteur WebView :
+
+- **Interface tactile complète** : Omnibox, barre de navigation basse, gestionnaire d'onglets, favoris, historique et thèmes sombres.
+- **Synchronisation mobile** :
+  ```powershell
+  npm run cap:sync
+  ```
+- **Compilation APK automatique** :
+  - Pipeline GitHub Actions configuré dans `.github/workflows/build-apk.yml`.
+  - Sur chaque push ou tag `v*` sur GitHub, l'APK `NaviDan.apk` est généré et disponible directement au téléchargement dans l'onglet **Actions > Artifacts**.
+- **Compilation locale (si Android Studio installé)** :
+  ```powershell
+  npx cap open android
+  ```

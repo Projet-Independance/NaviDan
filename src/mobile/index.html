@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0d1117">
+  <title>NaviDan Mobile</title>
+  <link rel="stylesheet" href="mobile.css">
+</head>
+<body class="theme-cyber-dark">
+  <div id="app-container">
+    <!-- Top Header / Omnibox -->
+    <header id="mobile-header">
+      <div class="header-inner">
+        <div class="shield-badge" id="btn-shield" title="Bouclier NaviDan">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+
+        <div class="omnibox-container">
+          <input type="text" id="omnibox-input" placeholder="Rechercher ou entrer une URL" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          <button id="btn-omnibox-action" class="omnibox-btn" title="Aller">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </button>
+        </div>
+
+        <button id="btn-open-tabs" class="header-icon-btn" title="Gestion des onglets">
+          <span class="tabs-count" id="header-tabs-count">1</span>
+        </button>
+      </div>
+
+      <!-- Loading progress bar -->
+      <div id="page-progress-bar" class="progress-bar hidden"></div>
+    </header>
+
+    <!-- Main Web Content / Tab Views -->
+    <main id="tabs-viewport">
+      <!-- Active views and New Tab Home will be injected dynamically -->
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <footer id="mobile-footer">
+      <div class="footer-inner">
+        <button id="btn-nav-back" class="nav-btn" title="Retour" disabled>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+
+        <button id="btn-nav-forward" class="nav-btn" title="Suivant" disabled>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+
+        <button id="btn-nav-home" class="nav-btn" title="Accueil">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+        </button>
+
+        <button id="btn-nav-bookmark" class="nav-btn" title="Ajouter aux favoris">
+          <svg id="icon-bookmark" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </button>
+
+        <button id="btn-nav-menu" class="nav-btn" title="Menu">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="1.5"></circle>
+            <circle cx="12" cy="5" r="1.5"></circle>
+            <circle cx="12" cy="19" r="1.5"></circle>
+          </svg>
+        </button>
+      </div>
+    </footer>
+
+    <!-- Tabs Manager Modal Sheet -->
+    <div id="tabs-sheet" class="modal-sheet hidden">
+      <div class="sheet-backdrop" id="tabs-sheet-backdrop"></div>
+      <div class="sheet-panel">
+        <div class="sheet-header">
+          <h3>Onglets ouverts (<span id="sheet-tabs-count">1</span>)</h3>
+          <div class="sheet-actions">
+            <button id="btn-new-tab" class="btn-primary-sm">+ Nouvel onglet</button>
+            <button id="btn-close-tabs-sheet" class="btn-close-sm">✕</button>
+          </div>
+        </div>
+        <div class="tabs-grid" id="tabs-grid">
+          <!-- Dynamically generated tab cards -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Menu Drawer Modal -->
+    <div id="menu-sheet" class="modal-sheet hidden">
+      <div class="sheet-backdrop" id="menu-sheet-backdrop"></div>
+      <div class="sheet-panel">
+        <div class="sheet-header">
+          <div class="menu-brand">
+            <span class="brand-logo">⚡</span>
+            <h3>NaviDan Mobile</h3>
+          </div>
+          <button id="btn-close-menu-sheet" class="btn-close-sm">✕</button>
+        </div>
+        <div class="menu-list">
+          <button class="menu-item" id="menu-item-bookmarks">
+            <span class="menu-icon">🔖</span>
+            <span class="menu-text">Favoris</span>
+          </button>
+          <button class="menu-item" id="menu-item-history">
+            <span class="menu-icon">🕒</span>
+            <span class="menu-text">Historique de navigation</span>
+          </button>
+          <button class="menu-item" id="menu-item-themes">
+            <span class="menu-icon">🎨</span>
+            <span class="menu-text">Thèmes & Apparence</span>
+          </button>
+          <div class="menu-divider"></div>
+          <button class="menu-item" id="menu-item-clear">
+            <span class="menu-icon">🧹</span>
+            <span class="menu-text">Effacer l'historique</span>
+          </button>
+        </div>
+        <div class="menu-footer">
+          <span>NaviDan v1.0.2 • Moteur WebView Android</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bookmarks / History Drawer -->
+    <div id="data-sheet" class="modal-sheet hidden">
+      <div class="sheet-backdrop" id="data-sheet-backdrop"></div>
+      <div class="sheet-panel">
+        <div class="sheet-header">
+          <h3 id="data-sheet-title">Favoris</h3>
+          <button id="btn-close-data-sheet" class="btn-close-sm">✕</button>
+        </div>
+        <div class="sheet-body" id="data-sheet-body">
+          <!-- Items dynamically generated -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Themes Selection Sheet -->
+    <div id="themes-sheet" class="modal-sheet hidden">
+      <div class="sheet-backdrop" id="themes-sheet-backdrop"></div>
+      <div class="sheet-panel">
+        <div class="sheet-header">
+          <h3>Thèmes & Couleurs</h3>
+          <button id="btn-close-themes-sheet" class="btn-close-sm">✕</button>
+        </div>
+        <div class="themes-selector">
+          <button class="theme-option" data-theme="cyber-dark">
+            <span class="theme-badge" style="background: #181d29; border: 1px solid #3b82f6;"></span>
+            <span class="theme-label">Cyber Sombre (Défaut)</span>
+          </button>
+          <button class="theme-option" data-theme="tokyo-night">
+            <span class="theme-badge" style="background: #161224; border: 1px solid #a855f7;"></span>
+            <span class="theme-label">Tokyo Night</span>
+          </button>
+          <button class="theme-option" data-theme="ocean-blue">
+            <span class="theme-badge" style="background: #071727; border: 1px solid #06b6d4;"></span>
+            <span class="theme-label">Océan Abyssal</span>
+          </button>
+          <button class="theme-option" data-theme="matrix-green">
+            <span class="theme-badge" style="background: #040905; border: 1px solid #10b981;"></span>
+            <span class="theme-label">Matrix Hacker</span>
+          </button>
+          <button class="theme-option" data-theme="light">
+            <span class="theme-badge" style="background: #f8fafc; border: 1px solid #cbd5e1;"></span>
+            <span class="theme-label">Clair Épuré</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="mobile.js"></script>
+</body>
+</html>
+
