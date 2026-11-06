@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let history = [];
   let currentTheme = 'cyber-dark';
 
+  const isNativeEngine = Boolean(window.Capacitor?.Plugins?.NaviDanEngine);
+  const Engine = window.Capacitor?.Plugins?.NaviDanEngine;
+
   // Speed Dial items
   const speedDialItems = [
     { name: 'Google', url: 'https://www.google.com', icon: '🔍' },
@@ -88,6 +91,23 @@ document.addEventListener('DOMContentLoaded', () => {
     saveStorage();
   }
 
+  // --- Viewport Bounds Sync with Native ---
+  function syncViewportBounds() {
+    if (!tabsViewport) return;
+    const rect = tabsViewport.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const top = Math.round(rect.top * dpr);
+    const height = Math.round(rect.height * dpr);
+
+    if (Engine) {
+      Engine.init({ top, height }).catch(() => {});
+    }
+  }
+
+  window.addEventListener('resize', () => {
+    syncViewportBounds();
+  });
+
   // --- URL Parser ---
   function formatSearchUrl(input) {
     const trimmed = String(input || '').trim();
@@ -113,7 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     tabs.push(tab);
 
-    // Create wrapper in viewport
     const wrapper = document.createElement('div');
     wrapper.id = `tab-wrapper-${id}`;
     wrapper.className = 'tab-frame-wrapper';
@@ -133,17 +152,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!tab) return;
     activeTabId = id;
 
-    // Toggle wrapper visibility
     document.querySelectorAll('.tab-frame-wrapper').forEach(el => el.classList.remove('active'));
     const currentWrapper = document.getElementById(`tab-wrapper-${id}`);
     if (currentWrapper) currentWrapper.classList.add('active');
 
-    // Update omnibox
     if (tab.url === 'navidan://newtab') {
       omniboxInput.value = '';
       omniboxInput.placeholder = 'Rechercher ou entrer une URL';
+      Engine?.hideContent().catch(() => {});
     } else {
       omniboxInput.value = tab.url;
+      if (Engine) {
+        Engine.switchTab({ id: tab.id }).catch(() => {});
+        Engine.showContent().catch(() => {});
+      }
     }
 
     updateNavButtons();
@@ -153,7 +175,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function closeTab(id) {
     if (tabs.length === 1) {
-      // Reinitialize to newtab if only 1 tab left
       const tab = tabs[0];
       navigateTab(tab.id, 'navidan://newtab');
       renderTabsGrid();
@@ -162,6 +183,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const idx = tabs.findIndex(t => t.id === id);
     if (idx === -1) return;
+
+    Engine?.closeTab({ id }).catch(() => {});
 
     const wrapper = document.getElementById(`tab-wrapper-${id}`);
     if (wrapper) wrapper.remove();
@@ -185,24 +208,34 @@ document.addEventListener('DOMContentLoaded', () => {
     tab.url = resolved;
     tab.title = resolved === 'navidan://newtab' ? 'Nouvel Onglet' : resolved;
 
-    // Truncate forward history and push new
     tab.history = tab.history.slice(0, tab.historyIndex + 1);
     tab.history.push(resolved);
     tab.historyIndex = tab.history.length - 1;
 
-    renderTabContent(tab);
-
-    if (tab.id === activeTabId) {
-      if (resolved === 'navidan://newtab') {
+    if (resolved === 'navidan://newtab') {
+      Engine?.hideContent().catch(() => {});
+      renderTabContent(tab);
+      if (tab.id === activeTabId) {
         omniboxInput.value = '';
+      }
+    } else {
+      showLoading();
+      if (Engine) {
+        // Native WebView navigation: completely bypasses X-Frame-Options DENY / ERR_BLOCKED_BY_RESPONSE!
+        Engine.navigate({ id: tab.id, url: resolved }).catch(() => {});
       } else {
+        renderTabContent(tab);
+      }
+      if (tab.id === activeTabId) {
         omniboxInput.value = resolved;
       }
+    }
+
+    if (tab.id === activeTabId) {
       updateNavButtons();
       updateBookmarkStatus();
     }
 
-    // Record in history if external
     if (resolved !== 'navidan://newtab') {
       history.unshift({
         id: Date.now().toString(),
@@ -221,7 +254,6 @@ document.addEventListener('DOMContentLoaded', () => {
     wrapper.innerHTML = '';
 
     if (tab.url === 'navidan://newtab') {
-      // Render New Tab Dashboard
       const dash = document.createElement('div');
       dash.className = 'newtab-dashboard';
       dash.innerHTML = `
@@ -247,28 +279,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         grid.appendChild(card);
       });
-    } else {
-      // Embed iframe
+    } else if (!Engine) {
+      // Fallback for browser previews without native engine
       showLoading();
       const iframe = document.createElement('iframe');
       iframe.className = 'tab-frame';
       iframe.src = tab.url;
-      iframe.setAttribute('allow', 'fullscreen; camera; microphone; geolocation');
-      iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
-
-      iframe.onload = () => {
-        hideLoading();
-        try {
-          if (iframe.contentDocument && iframe.contentDocument.title) {
-            tab.title = iframe.contentDocument.title;
-          }
-        } catch (_) {}
-      };
-
-      iframe.onerror = () => {
-        hideLoading();
-      };
-
+      iframe.onload = () => hideLoading();
+      iframe.onerror = () => hideLoading();
       wrapper.appendChild(iframe);
     }
   }
@@ -338,6 +356,52 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // --- Native Engine Listeners ---
+  if (Engine) {
+    Engine.addListener('urlChanged', (data) => {
+      const tab = tabs.find(t => t.id === data.tabId);
+      if (tab) {
+        tab.url = data.url;
+        if (tab.id === activeTabId) {
+          omniboxInput.value = data.url;
+        }
+      }
+    });
+
+    Engine.addListener('pageFinished', (data) => {
+      const tab = tabs.find(t => t.id === data.tabId);
+      if (tab) {
+        tab.url = data.url;
+        if (data.title) tab.title = data.title;
+        if (tab.id === activeTabId) {
+          omniboxInput.value = data.url;
+          btnNavBack.disabled = !data.canGoBack;
+          btnNavForward.disabled = !data.canGoForward;
+          updateBookmarkStatus();
+        }
+      }
+      hideLoading();
+    });
+
+    Engine.addListener('progressChanged', (data) => {
+      if (data.tabId === activeTabId) {
+        if (data.progress < 100) {
+          progressBar.classList.remove('hidden');
+          progressBar.style.width = `${data.progress}%`;
+        } else {
+          hideLoading();
+        }
+      }
+    });
+
+    Engine.addListener('titleChanged', (data) => {
+      const tab = tabs.find(t => t.id === data.tabId);
+      if (tab && data.title) {
+        tab.title = data.title;
+      }
+    });
+  }
+
   // --- Omnibox Events ---
   btnOmniboxAction.addEventListener('click', () => {
     if (omniboxInput.value.trim() && activeTabId !== null) {
@@ -357,26 +421,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Bottom Footer Navigation ---
   btnNavBack.addEventListener('click', () => {
-    const tab = tabs.find(t => t.id === activeTabId);
-    if (tab && tab.historyIndex > 0) {
-      tab.historyIndex--;
-      tab.url = tab.history[tab.historyIndex];
-      renderTabContent(tab);
-      omniboxInput.value = tab.url === 'navidan://newtab' ? '' : tab.url;
-      updateNavButtons();
-      updateBookmarkStatus();
+    if (Engine) {
+      Engine.goBack().catch(() => {});
+    } else {
+      const tab = tabs.find(t => t.id === activeTabId);
+      if (tab && tab.historyIndex > 0) {
+        tab.historyIndex--;
+        tab.url = tab.history[tab.historyIndex];
+        renderTabContent(tab);
+        omniboxInput.value = tab.url === 'navidan://newtab' ? '' : tab.url;
+        updateNavButtons();
+        updateBookmarkStatus();
+      }
     }
   });
 
   btnNavForward.addEventListener('click', () => {
-    const tab = tabs.find(t => t.id === activeTabId);
-    if (tab && tab.historyIndex < tab.history.length - 1) {
-      tab.historyIndex++;
-      tab.url = tab.history[tab.historyIndex];
-      renderTabContent(tab);
-      omniboxInput.value = tab.url === 'navidan://newtab' ? '' : tab.url;
-      updateNavButtons();
-      updateBookmarkStatus();
+    if (Engine) {
+      Engine.goForward().catch(() => {});
+    } else {
+      const tab = tabs.find(t => t.id === activeTabId);
+      if (tab && tab.historyIndex < tab.history.length - 1) {
+        tab.historyIndex++;
+        tab.url = tab.history[tab.historyIndex];
+        renderTabContent(tab);
+        omniboxInput.value = tab.url === 'navidan://newtab' ? '' : tab.url;
+        updateNavButtons();
+        updateBookmarkStatus();
+      }
     }
   });
 
@@ -406,17 +478,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Tabs Sheet Modal ---
   btnOpenTabs.addEventListener('click', () => {
+    Engine?.hideContent().catch(() => {});
     renderTabsGrid();
     tabsSheet.classList.remove('hidden');
   });
 
-  btnCloseTabsSheet.addEventListener('click', () => {
+  function closeTabsSheetModal() {
     tabsSheet.classList.add('hidden');
-  });
+    const tab = tabs.find(t => t.id === activeTabId);
+    if (tab && tab.url !== 'navidan://newtab') {
+      Engine?.showContent().catch(() => {});
+    }
+  }
 
-  tabsSheetBackdrop.addEventListener('click', () => {
-    tabsSheet.classList.add('hidden');
-  });
+  btnCloseTabsSheet.addEventListener('click', closeTabsSheetModal);
+  tabsSheetBackdrop.addEventListener('click', closeTabsSheetModal);
 
   btnNewTab.addEventListener('click', () => {
     createTab('navidan://newtab', true);
@@ -425,16 +501,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Menu Sheet Modal ---
   btnNavMenu.addEventListener('click', () => {
+    Engine?.hideContent().catch(() => {});
     menuSheet.classList.remove('hidden');
   });
 
-  btnCloseMenuSheet.addEventListener('click', () => {
+  function closeMenuSheetModal() {
     menuSheet.classList.add('hidden');
-  });
+    const tab = tabs.find(t => t.id === activeTabId);
+    if (tab && tab.url !== 'navidan://newtab') {
+      Engine?.showContent().catch(() => {});
+    }
+  }
 
-  menuSheetBackdrop.addEventListener('click', () => {
-    menuSheet.classList.add('hidden');
-  });
+  btnCloseMenuSheet.addEventListener('click', closeMenuSheetModal);
+  menuSheetBackdrop.addEventListener('click', closeMenuSheetModal);
 
   menuItemBookmarks.addEventListener('click', () => {
     menuSheet.classList.add('hidden');
@@ -462,7 +542,7 @@ document.addEventListener('DOMContentLoaded', () => {
   menuItemClear.addEventListener('click', () => {
     history = [];
     saveStorage();
-    menuSheet.classList.add('hidden');
+    closeMenuSheetModal();
     alert('Historique effacé avec succès.');
   });
 
@@ -507,33 +587,41 @@ document.addEventListener('DOMContentLoaded', () => {
     dataSheet.classList.remove('hidden');
   }
 
-  btnCloseDataSheet.addEventListener('click', () => {
+  function closeDataSheetModal() {
     dataSheet.classList.add('hidden');
-  });
+    const tab = tabs.find(t => t.id === activeTabId);
+    if (tab && tab.url !== 'navidan://newtab') {
+      Engine?.showContent().catch(() => {});
+    }
+  }
 
-  dataSheetBackdrop.addEventListener('click', () => {
-    dataSheet.classList.add('hidden');
-  });
+  btnCloseDataSheet.addEventListener('click', closeDataSheetModal);
+  dataSheetBackdrop.addEventListener('click', closeDataSheetModal);
 
   // --- Themes Sheet ---
-  btnCloseThemesSheet.addEventListener('click', () => {
+  function closeThemesSheetModal() {
     themesSheet.classList.add('hidden');
-  });
+    const tab = tabs.find(t => t.id === activeTabId);
+    if (tab && tab.url !== 'navidan://newtab') {
+      Engine?.showContent().catch(() => {});
+    }
+  }
 
-  themesSheetBackdrop.addEventListener('click', () => {
-    themesSheet.classList.add('hidden');
-  });
+  btnCloseThemesSheet.addEventListener('click', closeThemesSheetModal);
+  themesSheetBackdrop.addEventListener('click', closeThemesSheetModal);
 
   document.querySelectorAll('.theme-option').forEach(btn => {
     btn.addEventListener('click', () => {
       const selected = btn.getAttribute('data-theme');
       applyTheme(selected);
-      themesSheet.classList.add('hidden');
+      closeThemesSheetModal();
     });
   });
 
   // --- Startup ---
   loadStorage();
   createTab('navidan://newtab', true);
+  setTimeout(() => {
+    syncViewportBounds();
+  }, 300);
 });
-
