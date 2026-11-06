@@ -18,6 +18,9 @@ out/
 .env
 .env.local
 .env.*.local
+certs/
+*.pfx
+*.cer
 audit-securite.html
 
 # OS generated files

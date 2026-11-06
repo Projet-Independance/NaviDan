@@ -9,6 +9,7 @@
     "build:linux:all": "electron-builder --linux AppImage deb tar.gz --publish never",
     "build:win": "electron-builder --win portable nsis --publish never",
     "build:mobile": "node scripts/build-mobile.js",
+    "build:store": "electron-builder --win appx --publish never",
     "cap:sync": "npm run build:mobile && npx cap sync android",
     "cap:build": "npm run cap:sync && cd android && ./gradlew assembleDebug"
   },
@@ -18,6 +19,7 @@
   "build": {
     "appId": "com.navidan.browser",
     "productName": "NaviDan",
+    "copyright": "Copyright © 2026 Projet-Independance",
     "directories": {
       "output": "dist"
     },
@@ -43,6 +45,13 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "runAfterFinish": true
+    },
+    "appx": {
+      "applicationId": "NaviDan",
+      "identityName": "ProjetIndependance.NaviDan",
+      "publisher": "CN=Projet-Independance",
+      "publisherDisplayName": "Projet-Independance",
+      "backgroundColor": "#0d1117"
     },
     "files": [
       "src/**/*",
